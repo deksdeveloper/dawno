@@ -10,7 +10,7 @@ let settingsFile;
 let folderWatcher = null;
 
 
-const clientId = '1405068425121763410'; 
+const clientId = '1405068425121763410';
 let rpc = null;
 let rpcEnabled = true;
 
@@ -110,7 +110,7 @@ function createWindow() {
                 }
             });
         };
-        
+
         setTimeout(() => loadDev(port), 1000);
     } else {
         mainWindow.loadFile(path.join(__dirname, 'renderer/out/index.html'));
@@ -185,7 +185,7 @@ ipcMain.handle('dialog-open-file', async (event, encoding = 'utf-8') => {
 function decodeBuffer(buffer, requestedEncoding) {
     if (isBufferUtf8(buffer)) return buffer.toString('utf-8');
 
-    
+
     let targetEncoding = requestedEncoding;
     if (requestedEncoding === 'utf-8') {
         targetEncoding = settingsData.defaultEncoding || 'windows-1254';
@@ -399,7 +399,7 @@ ipcMain.handle('read-directory', async (event, dirPath) => {
 
 ipcMain.handle('fs-copy-file', async (event, { src, dest }) => {
     try {
-        
+
         await fs.promises.cp(src, dest, { recursive: true });
         return { success: true };
     } catch (err) {
@@ -463,7 +463,7 @@ ipcMain.on('rpc-toggle', (event, enabled) => {
 
 
 ipcMain.handle('find-pawncc', async (event, folderPath) => {
-    
+
     const candidates = ['pawno', 'qawno'];
     let current = folderPath;
 
@@ -471,14 +471,14 @@ ipcMain.handle('find-pawncc', async (event, folderPath) => {
         for (const candidate of candidates) {
             const pawnccPath = path.join(current, candidate, 'pawncc.exe');
             if (fs.existsSync(pawnccPath)) {
-                
+
                 settingsData.compilerPath = pawnccPath;
                 saveSettings();
                 return pawnccPath;
             }
         }
         const parent = path.dirname(current);
-        if (parent === current) break; 
+        if (parent === current) break;
         current = parent;
     }
     return null;
@@ -486,20 +486,19 @@ ipcMain.handle('find-pawncc', async (event, folderPath) => {
 
 
 async function findFileRecursive(startDir, targetNames, maxDepth = 4, currentDepth = 0) {
-    if (currentDepth > maxDepth) return null;
+    if (!startDir || currentDepth > maxDepth) return null;
     try {
+        if (!fs.existsSync(startDir)) return null;
         const entries = await fs.promises.readdir(startDir, { withFileTypes: true });
 
-        
         for (const entry of entries) {
             if (entry.isFile() && targetNames.includes(entry.name.toLowerCase())) {
                 return path.join(startDir, entry.name);
             }
         }
 
-        
         for (const entry of entries) {
-            if (entry.isDirectory() && !entry.name.startsWith('.') && entry.name !== 'node_modules') {
+            if (entry.isDirectory() && !entry.name.startsWith('.') && !['node_modules', 'bin', 'obj'].includes(entry.name.toLowerCase())) {
                 const found = await findFileRecursive(path.join(startDir, entry.name), targetNames, maxDepth, currentDepth + 1);
                 if (found) return found;
             }
@@ -576,14 +575,14 @@ ipcMain.handle('server-status', () => {
 });
 
 ipcMain.handle('server-restart', async (event, serverPath) => {
-    
+
     if (serverProcess) {
-        try { serverProcess.kill(); } catch (e) {  }
+        try { serverProcess.kill(); } catch (e) { }
         serverProcess = null;
         if (mainWindow) mainWindow.webContents.send('server-status-change', false);
         await new Promise(r => setTimeout(r, 1000));
     }
-    
+
     return new Promise((resolve) => {
         if (!serverPath || !fs.existsSync(serverPath)) {
             resolve({ success: false, error: 'Server executable not found.' });
@@ -632,7 +631,7 @@ ipcMain.handle('read-config-file', async (event, filePath) => {
                 return { success: false, error: 'Invalid JSON: ' + e.message };
             }
         } else {
-            
+
             const data = {};
             content.split('\n').forEach(line => {
                 const trimmed = line.trim();
@@ -657,7 +656,7 @@ ipcMain.handle('write-config-file', async (event, { filePath, data, type }) => {
         if (type === 'json') {
             content = JSON.stringify(data, null, 2);
         } else {
-            
+
             content = Object.entries(data).map(([k, v]) => v !== '' ? `${k} ${v}` : k).join('\n');
         }
         fs.writeFileSync(filePath, content, 'utf-8');
@@ -670,7 +669,7 @@ ipcMain.handle('write-config-file', async (event, { filePath, data, type }) => {
 
 app.on('before-quit', () => {
     if (serverProcess) {
-        try { serverProcess.kill(); } catch (e) {  }
+        try { serverProcess.kill(); } catch (e) { }
         serverProcess = null;
     }
 });

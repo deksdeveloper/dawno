@@ -32,7 +32,7 @@ export interface OutputLine {
 }
 
 export interface EditorContextValue {
-    
+
     tabs: TabState[];
     setTabs: React.Dispatch<React.SetStateAction<TabState[]>>;
     activeTabId: number | null;
@@ -42,30 +42,30 @@ export interface EditorContextValue {
     updateTab: (id: number, changes: Partial<TabState>) => void;
     saveViewState: (id: number) => void;
 
-    
+
     editorRef: React.MutableRefObject<MonacoType.editor.IStandaloneCodeEditor | null>;
     monacoRef: React.MutableRefObject<typeof MonacoType | null>;
 
-    
+
     settings: AppSettings;
     setSettings: React.Dispatch<React.SetStateAction<AppSettings>>;
 
-    
+
     currentFolderPath: string | null;
     setCurrentFolderPath: (path: string | null) => void;
 
-    
+
     currentEncoding: string;
     setCurrentEncoding: (enc: string) => void;
 
-    
+
     outputLines: OutputLine[];
     appendOutput: (text: string, type?: OutputLine['type'], clickable?: boolean, filePath?: string | null) => void;
     clearOutput: () => void;
     outputCollapsed: boolean;
     setOutputCollapsed: (v: boolean) => void;
 
-    
+
     detectedServerPath: string | null;
     setDetectedServerPath: (p: string | null) => void;
     detectedServerType: 'omp' | 'samp' | null;
@@ -75,7 +75,7 @@ export interface EditorContextValue {
     serverRunning: boolean;
     setServerRunning: (v: boolean) => void;
 
-    
+
     tabCounterRef: React.MutableRefObject<number>;
 }
 
@@ -108,7 +108,7 @@ export function EditorProvider({ children }: { children: React.ReactNode }) {
     const tabCounterRef = useRef(0);
     const outputLineIdRef = useRef(0);
 
-    
+
     useEffect(() => {
         if (typeof window === 'undefined') return;
         import('@monaco-editor/react').then(({ loader }) => {
@@ -118,7 +118,27 @@ export function EditorProvider({ children }: { children: React.ReactNode }) {
         });
     }, []);
 
-    
+
+    useEffect(() => {
+        if (!window.api || !currentFolderPath) {
+            setDetectedServerPath(null);
+            setDetectedConfigPath(null);
+            return;
+        }
+
+        window.api.detectServer(currentFolderPath).then(res => {
+            if (res) {
+                setDetectedServerPath(res.path);
+                setDetectedServerType(res.type);
+            }
+        });
+
+        window.api.detectConfig(currentFolderPath).then(path => {
+            if (path) setDetectedConfigPath(path);
+        });
+    }, [currentFolderPath]);
+
+
 
     const createTab = useCallback(
         (name: string, path: string | null, content: string, state?: Partial<TabState>): TabState | null => {
@@ -143,11 +163,11 @@ export function EditorProvider({ children }: { children: React.ReactNode }) {
             if (idx === -1) return prev;
             const tab = prev[idx];
             if (tab.dirty && !confirm(`"${tab.name}" is unsaved. Close anyway?`)) return prev;
-            try { tab.model?.dispose(); } catch {  }
+            try { tab.model?.dispose(); } catch { }
             const next = [...prev];
             next.splice(idx, 1);
 
-            
+
             if (next.length > 0) {
                 setActiveTabId(next[Math.min(idx, next.length - 1)].id);
             } else {
@@ -177,7 +197,7 @@ export function EditorProvider({ children }: { children: React.ReactNode }) {
         setActiveTabId(id);
     }, [activeTabId, saveViewState]);
 
-    
+
 
     const appendOutput = useCallback(
         (text: string, type: OutputLine['type'] = 'info', clickable = false, filePath: string | null = null) => {

@@ -9,12 +9,57 @@ export default function ConfigModal({ onClose }: { onClose: () => void }) {
     const [configRows, setConfigRows] = useState<Array<{ key: string, value: string }>>([]);
     const [configType, setConfigType] = useState<'json' | 'cfg'>('json');
 
+    const flattenObject = (obj: any, prefix = ''): Record<string, string> => {
+        let result: Record<string, string> = {};
+        for (const [k, v] of Object.entries(obj)) {
+            const key = prefix ? `${prefix}.${k}` : k;
+            if (v && typeof v === 'object' && !Array.isArray(v)) {
+                result = { ...result, ...flattenObject(v, key) };
+            } else {
+                result[key] = Array.isArray(v) ? JSON.stringify(v) : String(v);
+            }
+        }
+        return result;
+    };
+
+    const unflattenObject = (data: Record<string, string>) => {
+        const result: any = {};
+        for (const [k, v] of Object.entries(data)) {
+            const keys = k.split('.');
+            let current = result;
+            for (let i = 0; i < keys.length; i++) {
+                const key = keys[i];
+                if (i === keys.length - 1) {
+                    try {
+
+                        if ((v.startsWith('[') && v.endsWith(']'))) {
+                            current[key] = JSON.parse(v);
+                        } else if (v === 'true') current[key] = true;
+                        else if (v === 'false') current[key] = false;
+                        else if (!isNaN(Number(v)) && v.trim() !== '') current[key] = Number(v);
+                        else current[key] = v;
+                    } catch {
+                        current[key] = v;
+                    }
+                } else {
+                    current[key] = current[key] || {};
+                    current = current[key];
+                }
+            }
+        }
+        return result;
+    };
+
     const loadConfig = async (path: string) => {
         const res = await window.api.readConfigFile(path);
         if (res.success && res.data) {
             setConfigPath(path);
             setConfigType(res.type || 'json');
-            const rows = Object.entries(res.data).map(([k, v]) => ({ key: k, value: String(v) }));
+
+            const rows = (res.type === 'json')
+                ? Object.entries(flattenObject(res.data)).map(([k, v]) => ({ key: k, value: v }))
+                : Object.entries(res.data).map(([k, v]) => ({ key: k, value: String(v) }));
+
             setConfigRows(rows);
         } else if (res.error) {
             appendOutput(`Error loading config: ${res.error}`, 'error');
@@ -22,7 +67,6 @@ export default function ConfigModal({ onClose }: { onClose: () => void }) {
     };
 
     useEffect(() => {
-        
         if (!window.api) return;
         if (currentFolderPath) {
             window.api.detectConfig(currentFolderPath).then(path => {
@@ -32,10 +76,12 @@ export default function ConfigModal({ onClose }: { onClose: () => void }) {
     }, [currentFolderPath]);
 
     const handleSave = async () => {
-        const data: Record<string, string> = {};
-        configRows.forEach(row => { if (row.key) data[row.key] = row.value; });
+        const flatData: Record<string, string> = {};
+        configRows.forEach(row => { if (row.key) flatData[row.key] = row.value; });
 
-        const res = await window.api.writeConfigFile(configPath, data, configType);
+        const finalData = (configType === 'json') ? unflattenObject(flatData) : flatData;
+
+        const res = await window.api.writeConfigFile(configPath, finalData, configType);
         if (res.success) {
             appendOutput('Config saved.', 'success');
             onClose();
