@@ -1,8 +1,8 @@
 'use client';
 
 import { useEffect } from 'react';
-import { useEditorContext } from '@/context/EditorContext';
-import { useFileOperations } from '@/hooks/useFileOperations';
+import { useEditorContext } from '../context/EditorContext';
+import { useFileOperations } from '../hooks/useFileOperations';
 
 export function useKeyboardShortcuts({ setSettingsOpen }: { setSettingsOpen: (v: boolean) => void }) {
     const { activeTabId, closeTab, editorRef } = useEditorContext();

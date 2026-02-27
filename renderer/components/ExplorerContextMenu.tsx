@@ -1,7 +1,7 @@
 'use client';
 
-import { useEditorContext } from '@/context/EditorContext';
-import { useFileOperations } from '@/hooks/useFileOperations';
+import { useEditorContext } from '../context/EditorContext';
+import { useFileOperations } from '../hooks/useFileOperations';
 
 interface ExplorerContextMenuProps {
     x: number;

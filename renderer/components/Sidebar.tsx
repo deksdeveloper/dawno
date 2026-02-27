@@ -1,8 +1,8 @@
 'use client';
 
 import React, { useState, useEffect, useCallback } from 'react';
-import { useEditorContext } from '@/context/EditorContext';
-import { useFileOperations } from '@/hooks/useFileOperations';
+import { useEditorContext } from '../context/EditorContext';
+import { useFileOperations } from '../hooks/useFileOperations';
 
 interface FileTreeItem {
     name: string;

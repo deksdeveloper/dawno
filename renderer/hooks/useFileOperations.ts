@@ -1,6 +1,6 @@
 'use client';
 
-import { useEditorContext } from '@/context/EditorContext';
+import { useEditorContext } from '../context/EditorContext';
 import { useCallback } from 'react';
 
 export function useFileOperations() {

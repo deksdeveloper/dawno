@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect } from 'react';
-import { useEditorContext } from '@/context/EditorContext';
+import { useEditorContext } from '../context/EditorContext';
 
 export function useEditorBridge() {
     const { tabs, activeTabId, updateTab, settings, currentEncoding, appendOutput, clearOutput, editorRef } = useEditorContext();

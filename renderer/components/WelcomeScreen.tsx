@@ -1,6 +1,6 @@
 'use client';
 
-import { useFileOperations } from '@/hooks/useFileOperations';
+import { useFileOperations } from '../hooks/useFileOperations';
 
 export default function WelcomeScreen() {
     const { newFile, openFile, openFolder } = useFileOperations();

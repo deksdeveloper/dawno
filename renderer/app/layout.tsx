@@ -1,5 +1,5 @@
 import type { Metadata } from 'next';
-import { EditorProvider } from '@/context/EditorContext';
+import { EditorProvider } from '../context/EditorContext';
 
 export const metadata: Metadata = {
   title: 'DAWNO',

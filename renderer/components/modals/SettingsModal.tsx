@@ -1,6 +1,6 @@
 'use client';
 
-import { useEditorContext } from '@/context/EditorContext';
+import { useEditorContext } from '../../context/EditorContext';
 import { useState } from 'react';
 
 export default function SettingsModal({ onClose }: { onClose: () => void }) {

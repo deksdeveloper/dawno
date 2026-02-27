@@ -2,27 +2,27 @@
 
 import dynamic from 'next/dynamic';
 import { useEffect, useRef, useState } from 'react';
-import TitleBar from '@/components/TitleBar';
-import Sidebar from '@/components/Sidebar';
-import TabsBar from '@/components/TabsBar';
-import Toolbar from '@/components/Toolbar';
-import WelcomeScreen from '@/components/WelcomeScreen';
-import OutputPanel from '@/components/OutputPanel';
-import StatusBar from '@/components/StatusBar';
-import SettingsModal from '@/components/modals/SettingsModal';
-import ServerModal from '@/components/modals/ServerModal';
-import ConfigModal from '@/components/modals/ConfigModal';
-import EncodingPicker from '@/components/modals/EncodingPicker';
-import TabContextMenu from '@/components/TabContextMenu';
-import ExplorerContextMenu from '@/components/ExplorerContextMenu';
-import { useEditorContext } from '@/context/EditorContext';
-import { useSettings } from '@/hooks/useSettings';
-import { useFolderWatcher } from '@/hooks/useFolderWatcher';
-import { useKeyboardShortcuts } from '@/hooks/useKeyboardShortcuts';
-import { useEditorBridge } from '@/hooks/useEditorBridge';
+import TitleBar from '../components/TitleBar';
+import Sidebar from '../components/Sidebar';
+import TabsBar from '../components/TabsBar';
+import Toolbar from '../components/Toolbar';
+import WelcomeScreen from '../components/WelcomeScreen';
+import OutputPanel from '../components/OutputPanel';
+import StatusBar from '../components/StatusBar';
+import SettingsModal from '../components/modals/SettingsModal';
+import ServerModal from '../components/modals/ServerModal';
+import ConfigModal from '../components/modals/ConfigModal';
+import EncodingPicker from '../components/modals/EncodingPicker';
+import TabContextMenu from '../components/TabContextMenu';
+import ExplorerContextMenu from '../components/ExplorerContextMenu';
+import { useEditorContext } from '../context/EditorContext';
+import { useSettings } from '../hooks/useSettings';
+import { useFolderWatcher } from '../hooks/useFolderWatcher';
+import { useKeyboardShortcuts } from '../hooks/useKeyboardShortcuts';
+import { useEditorBridge } from '../hooks/useEditorBridge';
 
 
-const EditorPanel = dynamic(() => import('@/components/EditorPanel'), { ssr: false });
+const EditorPanel = dynamic(() => import('../components/EditorPanel'), { ssr: false });
 
 export default function HomePage() {
   const ctx = useEditorContext();

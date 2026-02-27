@@ -1,6 +1,6 @@
 'use client';
 
-import { useEditorContext } from '@/context/EditorContext';
+import { useEditorContext } from '../../context/EditorContext';
 import { useEffect, useState, useRef } from 'react';
 
 export default function ServerModal({ onClose }: { onClose: () => void }) {

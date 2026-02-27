@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useRef } from 'react';
-import { useEditorContext } from '@/context/EditorContext';
+import { useEditorContext } from '../context/EditorContext';
 
 export default function OutputPanel() {
     const { outputLines, clearOutput, outputCollapsed, setOutputCollapsed } = useEditorContext();

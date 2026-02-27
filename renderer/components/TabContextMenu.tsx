@@ -1,6 +1,6 @@
 'use client';
 
-import { useEditorContext } from '@/context/EditorContext';
+import { useEditorContext } from '../context/EditorContext';
 
 interface TabContextMenuProps {
     x: number;
