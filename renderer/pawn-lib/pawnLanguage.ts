@@ -173,7 +173,7 @@ export function registerPawnLanguage(monaco: typeof MonacoType) {
 
         tokenizer: {
             root: [
-                [/#(include|tryinclude)/, { token: 'keyword.directive', next: '@include' }],
+                [/#(include|tryinclude)/, { token: 'keyword.directive', next: 'includePath' }],
 
                 [/#\w+/, {
                     cases: {
@@ -219,6 +219,7 @@ export function registerPawnLanguage(monaco: typeof MonacoType) {
                 [/'/, 'string.invalid']
             ],
 
+            includePath: [
                 [/[ \t]+/, 'white'],
                 [/<[^>]+>/, 'string.include', '@pop'],
                 [/"[^"]+"/, 'string.include', '@pop'],
