@@ -173,6 +173,8 @@ export function registerPawnLanguage(monaco: typeof MonacoType) {
 
         tokenizer: {
             root: [
+                [/#(include|tryinclude)/, { token: 'keyword.directive', next: '@include' }],
+
                 [/#\w+/, {
                     cases: {
                         '@directives': 'keyword.directive',
@@ -215,6 +217,12 @@ export function registerPawnLanguage(monaco: typeof MonacoType) {
                 [/'[^\\']'/, 'string'],
                 [/(')(@escapes)(')/, ['string', 'string.escape', 'string']],
                 [/'/, 'string.invalid']
+            ],
+
+                [/[ \t]+/, 'white'],
+                [/<[^>]+>/, 'string.include', '@pop'],
+                [/"[^"]+"/, 'string.include', '@pop'],
+                [/$/, '', '@pop'],
             ],
 
             whitespace: [

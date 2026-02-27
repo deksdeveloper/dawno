@@ -21,6 +21,35 @@ export default function ExplorerContextMenu({ x, y, itemPath, isDirectory, onClo
             case 'open':
                 if (!isDirectory) openFileByPath(itemPath);
                 break;
+            case 'rename': {
+                const oldName = itemPath.split(/[\\/]/).pop();
+                const newName = prompt('Rename to:', oldName);
+                if (newName && newName !== oldName) {
+                    const parent = itemPath.split(/[\\/]/).slice(0, -1).join('/');
+                    const newPath = `${parent}/${newName}`;
+                    const res = await window.api.moveFile({ src: itemPath, dest: newPath });
+                    if (!res.success) appendOutput(`Error renaming: ${res.error}`, 'error');
+                }
+                break;
+            }
+            case 'new-file': {
+                const name = prompt('File name:');
+                if (name) {
+                    const path = isDirectory ? `${itemPath}/${name}` : `${itemPath.split(/[\\/]/).slice(0, -1).join('/')}/${name}`;
+                    const res = await window.api.createFile(path);
+                    if (!res.success) appendOutput(`Error creating file: ${res.error}`, 'error');
+                }
+                break;
+            }
+            case 'new-folder': {
+                const name = prompt('Folder name:');
+                if (name) {
+                    const path = isDirectory ? `${itemPath}/${name}` : `${itemPath.split(/[\\/]/).slice(0, -1).join('/')}/${name}`;
+                    const res = await window.api.createFolder(path);
+                    if (!res.success) appendOutput(`Error creating folder: ${res.error}`, 'error');
+                }
+                break;
+            }
             case 'copy-path':
                 navigator.clipboard.writeText(itemPath);
                 appendOutput(`Copied path: ${itemPath}`, 'info');
@@ -38,7 +67,6 @@ export default function ExplorerContextMenu({ x, y, itemPath, isDirectory, onClo
                     if (!res.success) appendOutput(`Error deleting: ${res.error}`, 'error');
                 }
                 break;
-            
         }
     };
 
@@ -53,6 +81,18 @@ export default function ExplorerContextMenu({ x, y, itemPath, isDirectory, onClo
                     <span>Open</span>
                 </div>
             )}
+            <div className="menu-item" onClick={() => handleAction('rename')}>
+                <span>Rename</span>
+                <span className="kbd">F2</span>
+            </div>
+            <div className="dropdown-separator" />
+            <div className="menu-item" onClick={() => handleAction('new-file')}>
+                <span>New File</span>
+            </div>
+            <div className="menu-item" onClick={() => handleAction('new-folder')}>
+                <span>New Folder</span>
+            </div>
+            <div className="dropdown-separator" />
             <div className="menu-item" onClick={() => handleAction('copy-path')}>
                 <span>Copy Path</span>
             </div>

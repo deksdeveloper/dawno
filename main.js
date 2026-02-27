@@ -443,6 +443,26 @@ ipcMain.handle('fs-get-stats', async (event, filePath) => {
     }
 });
 
+ipcMain.handle('fs-create-file', async (event, filePath) => {
+    try {
+        if (fs.existsSync(filePath)) return { success: false, error: 'File already exists.' };
+        fs.writeFileSync(filePath, '');
+        return { success: true };
+    } catch (err) {
+        return { success: false, error: err.message };
+    }
+});
+
+ipcMain.handle('fs-create-folder', async (event, folderPath) => {
+    try {
+        if (fs.existsSync(folderPath)) return { success: false, error: 'Folder already exists.' };
+        fs.mkdirSync(folderPath, { recursive: true });
+        return { success: true };
+    } catch (err) {
+        return { success: false, error: err.message };
+    }
+});
+
 
 ipcMain.on('rpc-update', (event, details) => {
     updateDiscordPresence(details);

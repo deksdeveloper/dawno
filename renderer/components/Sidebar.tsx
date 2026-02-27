@@ -17,10 +17,11 @@ interface SidebarProps {
 }
 
 export default function Sidebar({ width, onExplorerContextMenu }: SidebarProps) {
-    const { currentFolderPath, setCurrentFolderPath } = useEditorContext();
+    const { currentFolderPath, setCurrentFolderPath, appendOutput } = useEditorContext();
     const { openFolder, openFileByPath } = useFileOperations();
     const [tree, setTree] = useState<FileTreeItem[]>([]);
     const [expandedFolders, setExpandedFolders] = useState<Set<string>>(new Set());
+    const [refreshKey, setRefreshKey] = useState(0);
 
     const loadTree = useCallback(async (folderPath: string) => {
         if (!window.api) return;
@@ -40,15 +41,37 @@ export default function Sidebar({ width, onExplorerContextMenu }: SidebarProps) 
         } else {
             setTree([]);
         }
-    }, [currentFolderPath, loadTree]);
+    }, [currentFolderPath, loadTree, refreshKey]);
 
-    
     useEffect(() => {
         if (!window.api) return;
-        window.api.onFolderChange(() => {
-            if (currentFolderPath) loadTree(currentFolderPath);
+        const unsubscribe = window.api.onFolderChange((data) => {
+            setRefreshKey(prev => prev + 1);
         });
-    }, [currentFolderPath, loadTree]);
+        return () => {
+            // Unsubscribe if bridge supports it, but for now we just let it refresh.
+        };
+    }, []);
+
+    const handleNewFile = async () => {
+        if (!currentFolderPath) return;
+        const name = prompt('File name:');
+        if (name) {
+            const res = await window.api.createFile(`${currentFolderPath}/${name}`);
+            if (!res.success) appendOutput(`Error: ${res.error}`, 'error');
+            else setRefreshKey(prev => prev + 1);
+        }
+    };
+
+    const handleNewFolder = async () => {
+        if (!currentFolderPath) return;
+        const name = prompt('Folder name:');
+        if (name) {
+            const res = await window.api.createFolder(`${currentFolderPath}/${name}`);
+            if (!res.success) appendOutput(`Error: ${res.error}`, 'error');
+            else setRefreshKey(prev => prev + 1);
+        }
+    };
 
     const toggleFolder = (path: string) => {
         setExpandedFolders(prev => {
@@ -92,7 +115,15 @@ export default function Sidebar({ width, onExplorerContextMenu }: SidebarProps) 
                     <span className="tab-name">{item.name}</span>
                 </div>
                 {item.isDirectory && expandedFolders.has(item.path) && (
-                    <SubTree path={item.path} level={level + 1} toggleFolder={toggleFolder} expandedFolders={expandedFolders} openFileByPath={openFileByPath} onContextMenu={onExplorerContextMenu} />
+                    <SubTree
+                        path={item.path}
+                        level={level + 1}
+                        toggleFolder={toggleFolder}
+                        expandedFolders={expandedFolders}
+                        openFileByPath={openFileByPath}
+                        onContextMenu={onExplorerContextMenu}
+                        refreshKey={refreshKey}
+                    />
                 )}
             </React.Fragment>
         ));
@@ -103,6 +134,27 @@ export default function Sidebar({ width, onExplorerContextMenu }: SidebarProps) 
             <div className="sidebar-header">
                 <span>EXPLORER</span>
                 <div className="sidebar-actions">
+                    {currentFolderPath && (
+                        <>
+                            <button className="sidebar-action-btn" title="New File" onClick={handleNewFile}>
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" /><polyline points="14 2 14 8 20 8" />
+                                    <line x1="12" y1="11" x2="12" y2="17" /><line x1="9" y1="14" x2="15" y2="14" />
+                                </svg>
+                            </button>
+                            <button className="sidebar-action-btn" title="New Folder" onClick={handleNewFolder}>
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                    <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z" />
+                                    <line x1="12" y1="11" x2="12" y2="17" /><line x1="9" y1="14" x2="15" y2="14" />
+                                </svg>
+                            </button>
+                            <button className="sidebar-action-btn" title="Refresh" onClick={() => setRefreshKey(k => k + 1)}>
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                    <path d="M23 4v6h-6M1 20v-6h6M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15" />
+                                </svg>
+                            </button>
+                        </>
+                    )}
                     <button className="sidebar-action-btn" title="Close Folder" onClick={() => setCurrentFolderPath(null)}>
                         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                             <line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" />
@@ -124,7 +176,7 @@ export default function Sidebar({ width, onExplorerContextMenu }: SidebarProps) 
     );
 }
 
-function SubTree({ path, level, toggleFolder, expandedFolders, openFileByPath, onContextMenu }: any) {
+function SubTree({ path, level, toggleFolder, expandedFolders, openFileByPath, onContextMenu, refreshKey }: any) {
     const [items, setItems] = useState<FileTreeItem[]>([]);
 
     useEffect(() => {
@@ -137,7 +189,7 @@ function SubTree({ path, level, toggleFolder, expandedFolders, openFileByPath, o
                 }) as FileTreeItem[]);
             }
         });
-    }, [path]);
+    }, [path, refreshKey]);
 
     return (
         <>
