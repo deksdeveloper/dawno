@@ -1,25 +1,27 @@
 'use client';
 
-import { useEffect } from 'react';
-import { useEditorContext } from '../context/EditorContext';
+import { useEffect, useRef } from 'react';
+import { useEditorContext, TabState } from '../context/EditorContext';
 
 export function useFolderWatcher() {
-    const { currentFolderPath, appendOutput, tabs, updateTab, currentEncoding } = useEditorContext();
+    const { currentFolderPath, appendOutput, tabs, updateTab, currentEncoding, isProgrammaticUpdate } = useEditorContext();
+    const tabsRef = useRef(tabs);
+
+    useEffect(() => {
+        tabsRef.current = tabs;
+    }, [tabs]);
 
     useEffect(() => {
         if (!window.api || !currentFolderPath) return;
 
         const handleFolderChange = async (data: { eventType: string; filename: string }) => {
-            // filename on Windows might have backslashes, normalize
             const normalizedFilename = data.filename.replace(/\\/g, '/');
             const fullPath = `${currentFolderPath.replace(/\\/g, '/')}/${normalizedFilename}`;
 
-            // Check if any tab is using this file
-            const affectedTab = tabs.find(t => t.path && t.path.replace(/\\/g, '/') === fullPath);
+            const affectedTab = tabsRef.current.find((t: TabState) => t.path && t.path.replace(/\\/g, '/') === fullPath);
 
             if (affectedTab && affectedTab.model) {
-                // If it's a 'rename' or 'change', we check content
-                // Wait slightly to ensure file is written
+                // Wait slightly to ensure file is written fully by external editor
                 setTimeout(async () => {
                     try {
                         const { content, error } = await window.api.readFile(fullPath, currentEncoding);
@@ -27,35 +29,30 @@ export function useFolderWatcher() {
                             const currentVal = affectedTab.model?.getValue();
                             if (content !== currentVal) {
                                 if (!affectedTab.dirty) {
-                                    // Auto-reload
+                                    // Auto-reload without triggering 'dirty' or 'change' logic loop
+                                    isProgrammaticUpdate.current = true;
                                     affectedTab.model?.setValue(content);
+                                    isProgrammaticUpdate.current = false;
                                     appendOutput(`File "${affectedTab.name}" reloaded from disk.`, 'info');
                                 } else {
-                                    // User has unsaved changes, just notify
                                     appendOutput(`File "${affectedTab.name}" was modified externally. You have unsaved changes.`, 'warning');
                                 }
                             }
                         }
                     } catch (err) {
-                        // File might have been deleted
                         const exists = await window.api.exists(fullPath);
                         if (!exists) {
                             appendOutput(`File "${affectedTab.name}" was deleted or moved.`, 'warning');
-                            updateTab(affectedTab.id, { dirty: true }); // Mark as dirty/phantom if deleted? 
-                            // Or leave it as is so user can save it elsewhere.
                         }
                     }
-                }, 100);
+                }, 200);
             }
         };
 
         const unsubscribe = window.api.onFolderChange(handleFolderChange);
 
         return () => {
-            // Since onFolderChange might not return a direct unsubscribe in this simple bridge,
-            // we rely on the implementation or just let it be for now if multiple listeners are handled.
-            // In our main.js/preload.js, it's a simple .on(), which might leak if not careful.
-            // But for this task, focus on functionality.
+            if (typeof unsubscribe === 'function') unsubscribe();
         };
-    }, [currentFolderPath, appendOutput, tabs, updateTab, currentEncoding]);
+    }, [currentFolderPath, appendOutput, updateTab, currentEncoding, isProgrammaticUpdate]);
 }

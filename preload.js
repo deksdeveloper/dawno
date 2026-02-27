@@ -37,7 +37,11 @@ contextBridge.exposeInMainWorld('api', {
     updateRPC: (data) => ipcRenderer.send('rpc-update', data),
     toggleRPC: (enabled) => ipcRenderer.send('rpc-toggle', enabled),
 
-    onFolderChange: (cb) => ipcRenderer.on('folder-change', (e, data) => cb(data)),
+    onFolderChange: (cb) => {
+        const wrappedCb = (e, data) => cb(data);
+        ipcRenderer.on('folder-change', wrappedCb);
+        return () => ipcRenderer.removeListener('folder-change', wrappedCb);
+    },
 
 
     findPawncc: (folderPath) => ipcRenderer.invoke('find-pawncc', folderPath),

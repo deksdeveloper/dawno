@@ -7,10 +7,12 @@ import { useEditorContext, TabState } from '../context/EditorContext';
 import { registerPawnLanguage } from '../pawn-lib/pawnLanguage';
 
 export default function EditorPanel() {
-    const { tabs, setTabs, activeTabId, updateTab, settings, editorRef, monacoRef } = useEditorContext();
+    const { tabs, setTabs, activeTabId, updateTab, settings, editorRef, monacoRef, isProgrammaticUpdate } = useEditorContext();
     const monaco = useMonaco();
     const activeTab = tabs.find(t => t.id === activeTabId);
 
+
+    const editor = editorRef.current;
 
     useEffect(() => {
         if (monaco) {
@@ -26,8 +28,14 @@ export default function EditorPanel() {
         editorRef.current = editor;
         monacoRef.current = monaco;
 
+        // Apply initial settings immediately
+        editor.updateOptions({
+            fontSize: settings.fontSize,
+            theme: settings.theme === 'dark' ? 'vs-dark' : 'vs'
+        });
 
         editor.onDidChangeModelContent(() => {
+            if (isProgrammaticUpdate.current) return;
             if (activeTabId) {
                 setTabs((prev: TabState[]) => {
                     const idx = prev.findIndex(t => t.id === activeTabId);
@@ -41,7 +49,6 @@ export default function EditorPanel() {
             }
         });
 
-
         let timeout: any;
         editor.onDidChangeCursorPosition(e => {
             clearTimeout(timeout);
@@ -52,6 +59,18 @@ export default function EditorPanel() {
             }, 200);
         });
     };
+
+    // React to settings changes
+    useEffect(() => {
+        if (editorRef.current) {
+            editorRef.current.updateOptions({
+                fontSize: settings.fontSize,
+                theme: settings.theme === 'dark' ? 'vs-dark' : 'vs'
+            });
+            // Some versions of Monaco need a layout trigger for font size changes to reflect immediately
+            editorRef.current.layout();
+        }
+    }, [settings.fontSize, settings.theme]);
 
     useEffect(() => {
         const editor = editorRef.current;
@@ -64,31 +83,27 @@ export default function EditorPanel() {
             }
             editor.focus();
         }
-    }, [activeTabId, activeTab?.id, activeTab?.model, activeTab?.viewState, editorRef]);
-
-    useEffect(() => {
-        if (editorRef.current) {
-            editorRef.current.updateOptions({ fontSize: settings.fontSize });
-        }
-    }, [settings.fontSize, editorRef]);
+    }, [activeTabId, activeTab?.id, activeTab?.model, activeTab?.viewState]);
 
     return (
         <div className="editor-container" style={{ height: '100%', width: '100%', position: 'relative' }}>
             <Editor
-                theme="vs-dark"
+                theme={settings.theme === 'dark' ? 'vs-dark' : 'vs'}
                 language="pawn"
                 path={activeTab?.path || `untitled-${activeTab?.id}`}
                 defaultValue={activeTab?.model?.getValue() || ''}
                 onMount={handleEditorDidMount}
                 options={{
                     fontSize: settings.fontSize,
-                    fontFamily: 'var(--font-mono)',
+                    fontFamily: "'JetBrains Mono', 'Consolas', monospace",
                     minimap: { enabled: true },
                     automaticLayout: true,
                     scrollBeyondLastLine: false,
                     renderWhitespace: 'selection',
                     tabSize: 4,
                     fixedOverflowWidgets: true,
+                    readOnly: false,
+                    cursorStyle: 'line',
                 }}
             />
         </div>

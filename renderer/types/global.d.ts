@@ -44,7 +44,7 @@ declare global {
             toggleRPC(enabled: boolean): void;
 
 
-            onFolderChange(cb: (data: { eventType: string; filename: string }) => void): void;
+            onFolderChange(cb: (data: { eventType: string; filename: string }) => void): () => void;
 
 
             findPawncc(folderPath: string): Promise<string | null>;

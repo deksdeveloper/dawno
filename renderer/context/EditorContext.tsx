@@ -77,6 +77,7 @@ export interface EditorContextValue {
 
 
     tabCounterRef: React.MutableRefObject<number>;
+    isProgrammaticUpdate: React.MutableRefObject<boolean>;
 }
 
 
@@ -106,6 +107,7 @@ export function EditorProvider({ children }: { children: React.ReactNode }) {
     const editorRef = useRef<MonacoType.editor.IStandaloneCodeEditor | null>(null);
     const monacoRef = useRef<typeof MonacoType | null>(null);
     const tabCounterRef = useRef(0);
+    const isProgrammaticUpdate = useRef(false);
     const outputLineIdRef = useRef(0);
 
 
@@ -242,6 +244,7 @@ export function EditorProvider({ children }: { children: React.ReactNode }) {
         serverRunning,
         setServerRunning,
         tabCounterRef,
+        isProgrammaticUpdate,
     };
 
     return <EditorContext.Provider value={value}>{children}</EditorContext.Provider>;
