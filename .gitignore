@@ -1,0 +1,30 @@
+# Dependencies
+node_modules/
+.pnp
+.pnp.*
+
+# Next.js build
+renderer/.next/
+renderer/out/
+
+# Production build
+dist/
+build/
+
+# Logs
+*.log
+heartbeat.txt
+startup_log.txt
+
+# OS Files
+.DS_Store
+Thumbs.db
+
+# VS Code
+.vscode/
+
+# Local env files
+.env*.local
+
+# Electron / Binaries
+lib/

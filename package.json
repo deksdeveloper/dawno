@@ -1,0 +1,28 @@
+{
+  "name": "dawno",
+  "version": "1.0.0",
+  "description": "SA-MP PAWN Editor - A modern Pawno alternative",
+  "main": "main.js",
+  "scripts": {
+    "dev": "npm run build --prefix renderer && electron . --dev",
+    "dev:next": "npm run dev --prefix renderer",
+    "build": "npm run build --prefix renderer",
+    "start": "electron .",
+    "postinstall": "npm install --prefix renderer"
+  },
+  "keywords": [
+    "samp",
+    "pawn",
+    "editor",
+    "pawno"
+  ],
+  "author": "Deks",
+  "license": "MIT",
+  "dependencies": {
+    "discord-rpc": "^4.0.1",
+    "iconv-lite": "^0.7.2"
+  },
+  "devDependencies": {
+    "electron": "^33.0.0"
+  }
+}
