@@ -1,10 +1,8 @@
-'use client';
-
 import { useEffect, useRef } from 'react';
 import { useEditorContext, TabState } from '../context/EditorContext';
 
 export function useFolderWatcher() {
-    const { currentFolderPath, appendOutput, tabs, updateTab, currentEncoding, isProgrammaticUpdate } = useEditorContext();
+    const { currentFolderPath, appendOutput, tabs, updateTab, currentEncoding, isProgrammaticUpdate, monacoRef } = useEditorContext();
     const tabsRef = useRef(tabs);
 
     useEffect(() => {
@@ -15,23 +13,40 @@ export function useFolderWatcher() {
         if (!window.api || !currentFolderPath) return;
 
         const handleFolderChange = async (data: { eventType: string; filename: string }) => {
+            if (!data.filename) return;
             const normalizedFilename = data.filename.replace(/\\/g, '/');
-            const fullPath = `${currentFolderPath.replace(/\\/g, '/')}/${normalizedFilename}`;
+            const fullPath = `${currentFolderPath.replace(/\\/g, '/')}/${normalizedFilename}`.toLowerCase();
 
-            const affectedTab = tabsRef.current.find((t: TabState) => t.path && t.path.replace(/\\/g, '/') === fullPath);
+            const affectedTab = tabsRef.current.find((t: TabState) => {
+                if (!t.path) return false;
+                const tabPath = t.path.replace(/\\/g, '/').toLowerCase();
+                return tabPath === fullPath;
+            });
 
             if (affectedTab && affectedTab.model) {
                 // Wait slightly to ensure file is written fully by external editor
                 setTimeout(async () => {
                     try {
-                        const { content, error } = await window.api.readFile(fullPath, currentEncoding);
+                        const { content, error } = await window.api.readFile(affectedTab.path!, currentEncoding);
                         if (!error && content !== null) {
                             const currentVal = affectedTab.model?.getValue();
                             if (content !== currentVal) {
                                 if (!affectedTab.dirty) {
-                                    // Auto-reload without triggering 'dirty' or 'change' logic loop
                                     isProgrammaticUpdate.current = true;
-                                    affectedTab.model?.setValue(content);
+
+                                    // Use pushEditOperations instead of setValue for better stability
+                                    const model = affectedTab.model;
+                                    if (model) {
+                                        model.pushEditOperations(
+                                            [],
+                                            [{
+                                                range: model.getFullModelRange(),
+                                                text: content
+                                            }],
+                                            () => null
+                                        );
+                                    }
+
                                     isProgrammaticUpdate.current = false;
                                     appendOutput(`File "${affectedTab.name}" reloaded from disk.`, 'info');
                                 } else {
@@ -40,12 +55,12 @@ export function useFolderWatcher() {
                             }
                         }
                     } catch (err) {
-                        const exists = await window.api.exists(fullPath);
+                        const exists = await window.api.exists(affectedTab.path!);
                         if (!exists) {
                             appendOutput(`File "${affectedTab.name}" was deleted or moved.`, 'warning');
                         }
                     }
-                }, 200);
+                }, 150);
             }
         };
 
@@ -54,5 +69,5 @@ export function useFolderWatcher() {
         return () => {
             if (typeof unsubscribe === 'function') unsubscribe();
         };
-    }, [currentFolderPath, appendOutput, updateTab, currentEncoding, isProgrammaticUpdate]);
+    }, [currentFolderPath, appendOutput, updateTab, currentEncoding, isProgrammaticUpdate, monacoRef]);
 }

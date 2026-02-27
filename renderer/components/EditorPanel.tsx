@@ -7,7 +7,7 @@ import { useEditorContext, TabState } from '../context/EditorContext';
 import { registerPawnLanguage } from '../pawn-lib/pawnLanguage';
 
 export default function EditorPanel() {
-    const { tabs, setTabs, activeTabId, updateTab, settings, editorRef, monacoRef, isProgrammaticUpdate } = useEditorContext();
+    const { tabs, setTabs, activeTabId, updateTab, settings, setSettings, editorRef, monacoRef, isProgrammaticUpdate } = useEditorContext();
     const monaco = useMonaco();
     const activeTab = tabs.find(t => t.id === activeTabId);
 
@@ -71,6 +71,26 @@ export default function EditorPanel() {
             editorRef.current.layout();
         }
     }, [settings.fontSize, settings.theme]);
+
+    // Handle Ctrl + / Ctrl - shortcuts
+    useEffect(() => {
+        const handleKeyDown = (e: KeyboardEvent) => {
+            if (e.ctrlKey) {
+                if (e.key === '=' || e.key === '+') {
+                    e.preventDefault();
+                    setSettings(prev => ({ ...prev, fontSize: Math.min(prev.fontSize + 1, 30) }));
+                } else if (e.key === '-') {
+                    e.preventDefault();
+                    setSettings(prev => ({ ...prev, fontSize: Math.max(prev.fontSize - 1, 8) }));
+                } else if (e.key === '0') {
+                    e.preventDefault();
+                    setSettings(prev => ({ ...prev, fontSize: 14 }));
+                }
+            }
+        };
+        window.addEventListener('keydown', handleKeyDown);
+        return () => window.removeEventListener('keydown', handleKeyDown);
+    }, [setSettings]);
 
     useEffect(() => {
         const editor = editorRef.current;
