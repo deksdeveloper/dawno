@@ -508,7 +508,7 @@ async function findFileRecursive(startDir, targetNames, maxDepth = 4, currentDep
 }
 
 ipcMain.handle('detect-server', async (event, folderPath) => {
-    const serverPath = await findFileRecursive(folderPath, ['omp-server.exe', 'samp-server.exe']);
+    const serverPath = await findFileRecursive(folderPath, ['omp-server.exe', 'samp-server.exe'], 3);
     if (serverPath) {
         return { path: serverPath, type: serverPath.toLowerCase().includes('omp') ? 'omp' : 'samp' };
     }
@@ -516,7 +516,7 @@ ipcMain.handle('detect-server', async (event, folderPath) => {
 });
 
 ipcMain.handle('detect-config', async (event, folderPath) => {
-    return await findFileRecursive(folderPath, ['server.cfg', 'config.json']);
+    return await findFileRecursive(folderPath, ['server.cfg', 'config.json'], 3);
 });
 
 

@@ -11,7 +11,7 @@ export default function EditorPanel() {
     const monaco = useMonaco();
     const activeTab = tabs.find(t => t.id === activeTabId);
 
-    
+
     useEffect(() => {
         if (monaco) {
             monacoRef.current = monaco;
@@ -26,7 +26,7 @@ export default function EditorPanel() {
         editorRef.current = editor;
         monacoRef.current = monaco;
 
-        
+
         editor.onDidChangeModelContent(() => {
             if (activeTabId) {
                 setTabs((prev: TabState[]) => {
@@ -41,7 +41,7 @@ export default function EditorPanel() {
             }
         });
 
-        
+
         let timeout: any;
         editor.onDidChangeCursorPosition(e => {
             clearTimeout(timeout);
@@ -76,6 +76,7 @@ export default function EditorPanel() {
         <div className="editor-container" style={{ height: '100%', width: '100%', position: 'relative' }}>
             <Editor
                 theme="vs-dark"
+                language="pawn"
                 path={activeTab?.path || `untitled-${activeTab?.id}`}
                 defaultValue={activeTab?.model?.getValue() || ''}
                 onMount={handleEditorDidMount}

@@ -7,7 +7,12 @@ export function registerPawnLanguage(monaco: typeof MonacoType) {
     const languages = monaco.languages.getLanguages();
     if (languages.find(l => l.id === langId)) return;
 
-    monaco.languages.register({ id: langId });
+    monaco.languages.register({
+        id: langId,
+        extensions: ['.pwn', '.inc', '.p'],
+        aliases: ['Pawn', 'pawn'],
+        mimetypes: ['text/x-pawn']
+    });
 
     monaco.languages.setMonarchTokensProvider(langId, {
         defaultToken: '',
