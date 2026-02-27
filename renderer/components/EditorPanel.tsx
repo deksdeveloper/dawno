@@ -4,7 +4,7 @@ import React, { useEffect, useRef } from 'react';
 import { Editor, useMonaco } from '@monaco-editor/react';
 import * as MonacoType from 'monaco-editor';
 import { useEditorContext, TabState } from '../context/EditorContext';
-import { registerPawnLanguage } from '../lib/pawnLanguage';
+import { registerPawnLanguage } from '../pawn-lib/pawnLanguage';
 
 export default function EditorPanel() {
     const { tabs, setTabs, activeTabId, updateTab, settings, editorRef, monacoRef } = useEditorContext();
