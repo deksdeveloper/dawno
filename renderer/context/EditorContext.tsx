@@ -40,6 +40,7 @@ export interface EditorContextValue {
     createTab: (name: string, path: string | null, content: string, state?: Partial<TabState>) => TabState | null;
     closeTab: (id: number) => void;
     updateTab: (id: number, changes: Partial<TabState>) => void;
+    renameTab: (oldPath: string, newPath: string) => void;
     saveViewState: (id: number) => void;
 
 
@@ -78,6 +79,7 @@ export interface EditorContextValue {
 
     tabCounterRef: React.MutableRefObject<number>;
     isProgrammaticUpdate: React.MutableRefObject<boolean>;
+    shouldPreventFocus: React.MutableRefObject<boolean>;
 }
 
 
@@ -108,6 +110,7 @@ export function EditorProvider({ children }: { children: React.ReactNode }) {
     const monacoRef = useRef<typeof MonacoType | null>(null);
     const tabCounterRef = useRef(0);
     const isProgrammaticUpdate = useRef(false);
+    const shouldPreventFocus = useRef(false);
     const outputLineIdRef = useRef(0);
 
 
@@ -183,6 +186,16 @@ export function EditorProvider({ children }: { children: React.ReactNode }) {
         setTabs((prev) => prev.map((t) => (t.id === id ? { ...t, ...changes } : t)));
     }, []);
 
+    const renameTab = useCallback((oldPath: string, newPath: string) => {
+        setTabs(prev => prev.map(tab => {
+            if (tab.path === oldPath) {
+                const newName = newPath.split(/[\\/]/).pop() || tab.name;
+                return { ...tab, path: newPath, name: newName };
+            }
+            return tab;
+        }));
+    }, []);
+
     const saveViewState = useCallback((id: number) => {
         const editor = editorRef.current;
         if (!editor) return;
@@ -221,6 +234,7 @@ export function EditorProvider({ children }: { children: React.ReactNode }) {
         createTab,
         closeTab,
         updateTab,
+        renameTab,
         saveViewState,
         editorRef,
         monacoRef,
@@ -245,6 +259,7 @@ export function EditorProvider({ children }: { children: React.ReactNode }) {
         setServerRunning,
         tabCounterRef,
         isProgrammaticUpdate,
+        shouldPreventFocus
     };
 
     return <EditorContext.Provider value={value}>{children}</EditorContext.Provider>;

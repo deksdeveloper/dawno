@@ -7,7 +7,7 @@ import { useEditorContext, TabState } from '../context/EditorContext';
 import { registerPawnLanguage } from '../pawn-lib/pawnLanguage';
 
 export default function EditorPanel() {
-    const { tabs, setTabs, activeTabId, updateTab, settings, setSettings, editorRef, monacoRef, isProgrammaticUpdate } = useEditorContext();
+    const { tabs, setTabs, activeTabId, updateTab, settings, setSettings, editorRef, monacoRef, isProgrammaticUpdate, shouldPreventFocus } = useEditorContext();
     const monaco = useMonaco();
     const activeTab = tabs.find(t => t.id === activeTabId);
 
@@ -101,7 +101,12 @@ export default function EditorPanel() {
                     editor.restoreViewState(activeTab.viewState);
                 }
             }
-            editor.focus();
+
+            if (shouldPreventFocus.current) {
+                shouldPreventFocus.current = false;
+            } else {
+                editor.focus();
+            }
         }
     }, [activeTabId, activeTab?.id, activeTab?.model, activeTab?.viewState]);
 

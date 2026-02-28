@@ -20,7 +20,7 @@ interface SidebarProps {
 type InlineInputState = { mode: 'new-file' | 'new-folder'; parentPath: string } | null;
 
 export default function Sidebar({ width, onExplorerContextMenu }: SidebarProps) {
-    const { currentFolderPath, setCurrentFolderPath, appendOutput } = useEditorContext();
+    const { currentFolderPath, setCurrentFolderPath, appendOutput, shouldPreventFocus } = useEditorContext();
     const { openFolder, openFileByPath } = useFileOperations();
     const [tree, setTree] = useState<FileTreeItem[]>([]);
     const [expandedFolders, setExpandedFolders] = useState<Set<string>>(new Set());
@@ -59,14 +59,32 @@ export default function Sidebar({ width, onExplorerContextMenu }: SidebarProps) 
         });
     }, []);
 
-    const handleNewFile = () => {
+    const handleNewFile = async () => {
         if (!currentFolderPath) return;
-        setInlineInput({ mode: 'new-file', parentPath: currentFolderPath });
+        let parent = currentFolderPath;
+        if (selectedPath) {
+            const stats = await window.api.getStats(selectedPath);
+            if (stats.isDirectory) {
+                parent = selectedPath;
+            } else {
+                parent = selectedPath.split(/[\\/]/).slice(0, -1).join('\\');
+            }
+        }
+        setInlineInput({ mode: 'new-file', parentPath: parent });
     };
 
-    const handleNewFolder = () => {
+    const handleNewFolder = async () => {
         if (!currentFolderPath) return;
-        setInlineInput({ mode: 'new-folder', parentPath: currentFolderPath });
+        let parent = currentFolderPath;
+        if (selectedPath) {
+            const stats = await window.api.getStats(selectedPath);
+            if (stats.isDirectory) {
+                parent = selectedPath;
+            } else {
+                parent = selectedPath.split(/[\\/]/).slice(0, -1).join('\\');
+            }
+        }
+        setInlineInput({ mode: 'new-folder', parentPath: parent });
     };
 
     const handleInlineConfirm = async (name: string) => {
@@ -97,8 +115,10 @@ export default function Sidebar({ width, onExplorerContextMenu }: SidebarProps) 
     const clickTimers = useRef<Record<string, ReturnType<typeof setTimeout>>>({});
 
     const handleItemClick = useCallback((item: FileTreeItem) => {
+        setSelectedPath(item.path);
+
         if (clickTimers.current[item.path]) {
-            // Double click
+            // Double click - normal open with focus
             clearTimeout(clickTimers.current[item.path]);
             delete clickTimers.current[item.path];
             if (item.isDirectory) {
@@ -107,16 +127,19 @@ export default function Sidebar({ width, onExplorerContextMenu }: SidebarProps) 
                 openFileByPath(item.path);
             }
         } else {
-            // Single click – just select
-            setSelectedPath(item.path);
+            // Single click – select and open WITHOUT focus
             if (item.isDirectory) {
                 toggleFolder(item.path);
+            } else {
+                shouldPreventFocus.current = true;
+                openFileByPath(item.path);
             }
+
             clickTimers.current[item.path] = setTimeout(() => {
                 delete clickTimers.current[item.path];
             }, 300);
         }
-    }, [openFileByPath]);
+    }, [openFileByPath, shouldPreventFocus]);
 
     // Drag & Drop handlers
     const handleDragStart = useCallback((e: React.DragEvent, item: FileTreeItem) => {
@@ -219,10 +242,40 @@ export default function Sidebar({ width, onExplorerContextMenu }: SidebarProps) 
                         onDragLeave={handleDragLeave}
                         onDrop={handleDrop}
                         onDragEnd={handleDragEnd}
+                        shouldPreventFocus={shouldPreventFocus}
                     />
                 )}
             </React.Fragment>
         ));
+    };
+
+    const getNewItemParentPath = () => {
+        if (!selectedPath) return currentFolderPath || '';
+        // If selectedPath is one of the tree items, check if it's a directory
+        const findInTree = (items: FileTreeItem[]): FileTreeItem | null => {
+            for (const it of items) {
+                if (it.path === selectedPath) return it;
+                if (it.children) {
+                    const found = findInTree(it.children);
+                    if (found) return found;
+                }
+            }
+            return null;
+        };
+        // This is tricky because tree is only top-level. 
+        // We'll trust ExplorerContextMenu.tsx for the exact logic,
+        // but here we can at least try to be smart.
+        return selectedPath; // Placeholder, refined below
+    };
+
+    const handleNewFileCorrected = () => {
+        if (!currentFolderPath) return;
+        // The most reliable way is for the user to right-click. 
+        // But if they click the button, we use selectedPath.
+        // We actually need to know if selectedPath is a directory or file.
+        // Let's pass a function to get the parent of ANY path.
+        onExplorerContextMenu(0, 0, selectedPath || currentFolderPath, true); // Trigger context menu internally or just handle it.
+        // Actually, let's just fix handleNewFile to prompt correctly.
     };
 
     return (
@@ -282,7 +335,7 @@ export default function Sidebar({ width, onExplorerContextMenu }: SidebarProps) 
     );
 }
 
-function SubTree({ path, level, toggleFolder, expandedFolders, selectedPath, setSelectedPath, openFileByPath, onContextMenu, refreshKey, dragOverPath, onDragStart, onDragOver, onDragLeave, onDrop, onDragEnd }: any) {
+function SubTree({ path, level, toggleFolder, expandedFolders, selectedPath, setSelectedPath, openFileByPath, onContextMenu, refreshKey, dragOverPath, onDragStart, onDragOver, onDragLeave, onDrop, onDragEnd, shouldPreventFocus }: any) {
     const [items, setItems] = useState<FileTreeItem[]>([]);
     const clickTimers = useRef<Record<string, ReturnType<typeof setTimeout>>>({});
 
@@ -299,6 +352,7 @@ function SubTree({ path, level, toggleFolder, expandedFolders, selectedPath, set
     }, [path, refreshKey]);
 
     const handleItemClick = (item: FileTreeItem) => {
+        setSelectedPath(item.path);
         if (clickTimers.current[item.path]) {
             clearTimeout(clickTimers.current[item.path]);
             delete clickTimers.current[item.path];
@@ -308,9 +362,11 @@ function SubTree({ path, level, toggleFolder, expandedFolders, selectedPath, set
                 openFileByPath(item.path);
             }
         } else {
-            setSelectedPath(item.path);
             if (item.isDirectory) {
                 toggleFolder(item.path);
+            } else {
+                if (shouldPreventFocus) shouldPreventFocus.current = true;
+                openFileByPath(item.path);
             }
             clickTimers.current[item.path] = setTimeout(() => {
                 delete clickTimers.current[item.path];
@@ -372,6 +428,7 @@ function SubTree({ path, level, toggleFolder, expandedFolders, selectedPath, set
                             onDragLeave={onDragLeave}
                             onDrop={onDrop}
                             onDragEnd={onDragEnd}
+                            shouldPreventFocus={shouldPreventFocus}
                         />
                     )}
                 </React.Fragment>

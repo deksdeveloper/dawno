@@ -16,7 +16,7 @@ interface ExplorerContextMenuProps {
 type PendingAction = 'rename' | 'new-file' | 'new-folder' | 'delete-confirm' | null;
 
 export default function ExplorerContextMenu({ x, y, itemPath, isDirectory, onClose }: ExplorerContextMenuProps) {
-    const { currentFolderPath, appendOutput } = useEditorContext();
+    const { currentFolderPath, appendOutput, renameTab } = useEditorContext();
     const { openFileByPath } = useFileOperations();
     const [pendingAction, setPendingAction] = useState<PendingAction>(null);
 
@@ -60,7 +60,11 @@ export default function ExplorerContextMenu({ x, y, itemPath, isDirectory, onClo
             const parent = itemPath.split(/[\\/]/).slice(0, -1).join('\\');
             const newPath = `${parent}\\${newName}`;
             const res = await window.api.moveFile({ src: itemPath, dest: newPath });
-            if (!res.success) appendOutput(`Error renaming: ${res.error}`, 'error');
+            if (!res.success) {
+                appendOutput(`Error renaming: ${res.error}`, 'error');
+            } else {
+                renameTab(itemPath, newPath);
+            }
         }
         onClose();
     };
