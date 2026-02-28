@@ -32,5 +32,4 @@ package-lock.json
 /.electron-builder-cache
 /winCodeSign
 /extracted-tools
-/scripts
 PROJECT_GUIDE.md
