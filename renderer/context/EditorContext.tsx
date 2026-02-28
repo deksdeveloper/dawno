@@ -42,6 +42,8 @@ export interface EditorContextValue {
     updateTab: (id: number, changes: Partial<TabState>) => void;
     renameTab: (oldPath: string, newPath: string) => void;
     saveViewState: (id: number) => void;
+    goBack: () => void;
+    goForward: () => void;
 
 
     editorRef: React.MutableRefObject<MonacoType.editor.IStandaloneCodeEditor | null>;
@@ -88,7 +90,76 @@ const EditorContext = createContext<EditorContextValue | null>(null);
 
 export function EditorProvider({ children }: { children: React.ReactNode }) {
     const [tabs, setTabs] = useState<TabState[]>([]);
-    const [activeTabId, setActiveTabId] = useState<number | null>(null);
+    const [activeTabId, _setActiveTabId] = useState<number | null>(null);
+    const [historyStack, setHistoryStack] = useState<number[]>([]);
+    const [forwardStack, setForwardStack] = useState<number[]>([]);
+    const isNavigating = useRef(false);
+
+    const setActiveTabId = useCallback((id: number | null) => {
+        if (!isNavigating.current && id !== activeTabId && activeTabId !== null) {
+            setHistoryStack(prev => [...prev, activeTabId]);
+            setForwardStack([]); // Clear forward stack on manual change
+        }
+        _setActiveTabId(id);
+    }, [activeTabId]);
+
+    const goBack = useCallback(() => {
+        if (historyStack.length === 0) return;
+        isNavigating.current = true;
+
+        let previousId = -1;
+        let newHistory = [...historyStack];
+
+        // Find the last valid tab ID in history
+        while (newHistory.length > 0) {
+            const id = newHistory.pop()!;
+            if (tabs.some(t => t.id === id)) {
+                previousId = id;
+                break;
+            }
+        }
+
+        if (previousId !== -1) {
+            if (activeTabId !== null) {
+                setForwardStack(prev => [...prev, activeTabId]);
+            }
+            setHistoryStack(newHistory);
+            _setActiveTabId(previousId);
+        } else {
+            setHistoryStack([]);
+        }
+
+        setTimeout(() => { isNavigating.current = false; }, 0);
+    }, [historyStack, activeTabId, tabs]);
+
+    const goForward = useCallback(() => {
+        if (forwardStack.length === 0) return;
+        isNavigating.current = true;
+
+        let nextId = -1;
+        let newForward = [...forwardStack];
+
+        // Find the next valid tab ID in forward stack
+        while (newForward.length > 0) {
+            const id = newForward.pop()!;
+            if (tabs.some(t => t.id === id)) {
+                nextId = id;
+                break;
+            }
+        }
+
+        if (nextId !== -1) {
+            if (activeTabId !== null) {
+                setHistoryStack(prev => [...prev, activeTabId]);
+            }
+            setForwardStack(newForward);
+            _setActiveTabId(nextId);
+        } else {
+            setForwardStack([]);
+        }
+
+        setTimeout(() => { isNavigating.current = false; }, 0);
+    }, [forwardStack, activeTabId, tabs]);
     const [settings, setSettings] = useState<AppSettings>({
         compilerPath: '',
         includePaths: [],
@@ -236,6 +307,8 @@ export function EditorProvider({ children }: { children: React.ReactNode }) {
         updateTab,
         renameTab,
         saveViewState,
+        goBack,
+        goForward,
         editorRef,
         monacoRef,
         settings,

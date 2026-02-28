@@ -19,6 +19,7 @@ import { useEditorContext } from '../context/EditorContext';
 import { useSettings } from '../hooks/useSettings';
 import { useFolderWatcher } from '../hooks/useFolderWatcher';
 import { useKeyboardShortcuts } from '../hooks/useKeyboardShortcuts';
+import { useNavigation } from '../hooks/useNavigation';
 import { useEditorBridge } from '../hooks/useEditorBridge';
 import { useDiscordRpc } from '../hooks/useDiscordRpc';
 
@@ -43,9 +44,10 @@ export default function HomePage() {
 
   useSettings();
   useFolderWatcher();
+  useDiscordRpc();
+  useNavigation();
   useKeyboardShortcuts({ setSettingsOpen });
   useEditorBridge();
-  useDiscordRpc();
 
   // Close context menus when clicking outside
   useEffect(() => {
