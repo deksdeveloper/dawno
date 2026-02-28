@@ -10,7 +10,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="en">
       <head>
-        <link rel="stylesheet" href="/assets/style.css" />
+        <link rel="stylesheet" href="./assets/style.css" />
       </head>
       <body>
         <EditorProvider>

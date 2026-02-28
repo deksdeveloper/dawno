@@ -1,4 +1,4 @@
-const { app, BrowserWindow, ipcMain, dialog, Menu, shell } = require('electron');
+const { app, BrowserWindow, ipcMain, dialog, Menu, shell, protocol } = require('electron');
 const path = require('path');
 const fs = require('fs');
 const iconv = require('iconv-lite');
@@ -128,6 +128,22 @@ function createWindow() {
 
         setTimeout(() => loadDev(port), 1000);
     } else {
+        // Register a custom file interceptor to serve root-relative paths
+        // such as /assets/style.css or /_next/static/... from the correct location
+        protocol.interceptFileProtocol('file', (request, callback) => {
+            let url = request.url.replace(/^file:\/\//, '');
+            // Remove leading slash for Windows paths like /C:/...
+            if (url.startsWith('/')) url = url.slice(1);
+
+            url = decodeURIComponent(url);
+
+            // Check if it's a root-relative path (not an absolute windows path)
+            if (!/^[A-Za-z]:/.test(url)) {
+                const rendererOut = path.join(__dirname, 'renderer', 'out');
+                url = path.join(rendererOut, url);
+            }
+            callback({ path: path.normalize(url) });
+        });
         mainWindow.loadFile(path.join(__dirname, 'renderer/out/index.html'));
     }
 
