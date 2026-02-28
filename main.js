@@ -141,6 +141,14 @@ function createWindow() {
     mainWindow.on('unmaximize', () => {
         if (mainWindow) mainWindow.webContents.send('window-state-change', 'normal');
     });
+
+    mainWindow.on('app-command', (e, cmd) => {
+        if (cmd === 'browser-backward') {
+            mainWindow.webContents.send('nav-back');
+        } else if (cmd === 'browser-forward') {
+            mainWindow.webContents.send('nav-forward');
+        }
+    });
 }
 
 app.whenReady().then(() => {

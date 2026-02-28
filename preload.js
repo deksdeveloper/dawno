@@ -59,5 +59,16 @@ contextBridge.exposeInMainWorld('api', {
     detectConfig: (folderPath) => ipcRenderer.invoke('detect-config', folderPath),
     readConfigFile: (filePath) => ipcRenderer.invoke('read-config-file', filePath),
     writeConfigFile: (filePath, data, type) => ipcRenderer.invoke('write-config-file', { filePath, data, type }),
+
+    onNavBack: (cb) => {
+        const wrappedCb = () => cb();
+        ipcRenderer.on('nav-back', wrappedCb);
+        return () => ipcRenderer.removeListener('nav-back', wrappedCb);
+    },
+    onNavForward: (cb) => {
+        const wrappedCb = () => cb();
+        ipcRenderer.on('nav-forward', wrappedCb);
+        return () => ipcRenderer.removeListener('nav-forward', wrappedCb);
+    }
 });
 

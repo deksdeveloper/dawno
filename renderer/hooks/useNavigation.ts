@@ -7,15 +7,21 @@ export function useNavigation() {
     const { goBack, goForward } = useEditorContext();
 
     useEffect(() => {
-        const handleMouseUp = (e: MouseEvent) => {
-            // Button 3 is "Back", Button 4 is "Forward" on most mice
-            // In JavaScript MouseEvent.button:
-            // 0: Main (left)
-            // 1: Auxiliary (middle)
-            // 2: Secondary (right)
-            // 3: Fourth button (Back)
-            // 4: Fifth button (Forward)
+        // 1. Hardware-level "App Commands" (Windows/Electron best practice for mice)
+        let unlistenBack: (() => void) | undefined;
+        let unlistenForward: (() => void) | undefined;
 
+        const api = window.api as any;
+
+        if (api?.onNavBack) {
+            unlistenBack = api.onNavBack(() => goBack());
+        }
+        if (api?.onNavForward) {
+            unlistenForward = api.onNavForward(() => goForward());
+        }
+
+        // 2. Raw mouse button events (Fallback/Direct)
+        const handleMouseUp = (e: MouseEvent) => {
             if (e.button === 3) {
                 e.preventDefault();
                 goBack();
@@ -26,6 +32,10 @@ export function useNavigation() {
         };
 
         window.addEventListener('mouseup', handleMouseUp);
-        return () => window.removeEventListener('mouseup', handleMouseUp);
+        return () => {
+            if (unlistenBack) unlistenBack();
+            if (unlistenForward) unlistenForward();
+            window.removeEventListener('mouseup', handleMouseUp);
+        };
     }, [goBack, goForward]);
 }
