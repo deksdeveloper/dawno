@@ -1,8 +1,9 @@
 'use client';
 
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useEditorContext } from '../context/EditorContext';
 import { useFileOperations } from '../hooks/useFileOperations';
+import InlineInput from './InlineInput';
 
 interface FileTreeItem {
     name: string;
@@ -16,12 +17,20 @@ interface SidebarProps {
     onExplorerContextMenu: (x: number, y: number, path: string, isDirectory: boolean) => void;
 }
 
+type InlineInputState = { mode: 'new-file' | 'new-folder'; parentPath: string } | null;
+
 export default function Sidebar({ width, onExplorerContextMenu }: SidebarProps) {
     const { currentFolderPath, setCurrentFolderPath, appendOutput } = useEditorContext();
     const { openFolder, openFileByPath } = useFileOperations();
     const [tree, setTree] = useState<FileTreeItem[]>([]);
     const [expandedFolders, setExpandedFolders] = useState<Set<string>>(new Set());
+    const [selectedPath, setSelectedPath] = useState<string | null>(null);
     const [refreshKey, setRefreshKey] = useState(0);
+    const [inlineInput, setInlineInput] = useState<InlineInputState>(null);
+
+    // Drag & drop state
+    const draggedPath = useRef<string | null>(null);
+    const [dragOverPath, setDragOverPath] = useState<string | null>(null);
 
     const loadTree = useCallback(async (folderPath: string) => {
         if (!window.api) return;
@@ -45,32 +54,34 @@ export default function Sidebar({ width, onExplorerContextMenu }: SidebarProps) 
 
     useEffect(() => {
         if (!window.api) return;
-        const unsubscribe = window.api.onFolderChange((data) => {
+        window.api.onFolderChange(() => {
             setRefreshKey(prev => prev + 1);
         });
-        return () => {
-            // Unsubscribe if bridge supports it, but for now we just let it refresh.
-        };
     }, []);
 
-    const handleNewFile = async () => {
+    const handleNewFile = () => {
         if (!currentFolderPath) return;
-        const name = prompt('File name:');
-        if (name) {
-            const res = await window.api.createFile(`${currentFolderPath}/${name}`);
-            if (!res.success) appendOutput(`Error: ${res.error}`, 'error');
-            else setRefreshKey(prev => prev + 1);
-        }
+        setInlineInput({ mode: 'new-file', parentPath: currentFolderPath });
     };
 
-    const handleNewFolder = async () => {
+    const handleNewFolder = () => {
         if (!currentFolderPath) return;
-        const name = prompt('Folder name:');
-        if (name) {
-            const res = await window.api.createFolder(`${currentFolderPath}/${name}`);
+        setInlineInput({ mode: 'new-folder', parentPath: currentFolderPath });
+    };
+
+    const handleInlineConfirm = async (name: string) => {
+        if (!inlineInput) return;
+        const newPath = `${inlineInput.parentPath}\\${name}`;
+        if (inlineInput.mode === 'new-file') {
+            const res = await window.api.createFile(newPath);
+            if (!res.success) appendOutput(`Error: ${res.error}`, 'error');
+            else setRefreshKey(prev => prev + 1);
+        } else {
+            const res = await window.api.createFolder(newPath);
             if (!res.success) appendOutput(`Error: ${res.error}`, 'error');
             else setRefreshKey(prev => prev + 1);
         }
+        setInlineInput(null);
     };
 
     const toggleFolder = (path: string) => {
@@ -82,20 +93,97 @@ export default function Sidebar({ width, onExplorerContextMenu }: SidebarProps) 
         });
     };
 
+    // Single click: select (highlight). Double click: open file / toggle folder
+    const clickTimers = useRef<Record<string, ReturnType<typeof setTimeout>>>({});
+
+    const handleItemClick = useCallback((item: FileTreeItem) => {
+        if (clickTimers.current[item.path]) {
+            // Double click
+            clearTimeout(clickTimers.current[item.path]);
+            delete clickTimers.current[item.path];
+            if (item.isDirectory) {
+                toggleFolder(item.path);
+            } else {
+                openFileByPath(item.path);
+            }
+        } else {
+            // Single click – just select
+            setSelectedPath(item.path);
+            if (item.isDirectory) {
+                toggleFolder(item.path);
+            }
+            clickTimers.current[item.path] = setTimeout(() => {
+                delete clickTimers.current[item.path];
+            }, 300);
+        }
+    }, [openFileByPath]);
+
+    // Drag & Drop handlers
+    const handleDragStart = useCallback((e: React.DragEvent, item: FileTreeItem) => {
+        draggedPath.current = item.path;
+        e.dataTransfer.effectAllowed = 'move';
+        e.dataTransfer.setData('text/plain', item.path);
+    }, []);
+
+    const handleDragOver = useCallback((e: React.DragEvent, item: FileTreeItem) => {
+        e.preventDefault();
+        e.stopPropagation();
+        if (!draggedPath.current || draggedPath.current === item.path) return;
+        e.dataTransfer.dropEffect = 'move';
+        // Only allow dropping onto directories
+        if (item.isDirectory) setDragOverPath(item.path);
+    }, []);
+
+    const handleDragLeave = useCallback((e: React.DragEvent) => {
+        e.preventDefault();
+        setDragOverPath(null);
+    }, []);
+
+    const handleDrop = useCallback(async (e: React.DragEvent, item: FileTreeItem) => {
+        e.preventDefault();
+        e.stopPropagation();
+        setDragOverPath(null);
+        const src = draggedPath.current;
+        draggedPath.current = null;
+        if (!src || src === item.path) return;
+
+        // Target must be a directory
+        const targetDir = item.isDirectory ? item.path : item.path.split(/[\\/]/).slice(0, -1).join('\\');
+        const fileName = src.split(/[\\/]/).pop()!;
+        const dest = `${targetDir}\\${fileName}`;
+        if (src === dest) return;
+
+        const res = await window.api.moveFile({ src, dest });
+        if (!res.success) {
+            appendOutput(`Error moving: ${res.error}`, 'error');
+        } else {
+            setRefreshKey(prev => prev + 1);
+        }
+    }, [appendOutput]);
+
+    const handleDragEnd = useCallback(() => {
+        draggedPath.current = null;
+        setDragOverPath(null);
+    }, []);
+
     const renderTree = (items: FileTreeItem[], level = 0) => {
         return items.map(item => (
             <React.Fragment key={item.path}>
                 <div
-                    className="tree-item"
+                    className={`tree-item${selectedPath === item.path ? ' selected' : ''}${dragOverPath === item.path ? ' drag-over' : ''}`}
                     style={{ paddingLeft: `${level * 12 + 12}px` }}
-                    onClick={() => {
-                        if (item.isDirectory) toggleFolder(item.path);
-                        else openFileByPath(item.path);
-                    }}
+                    onClick={() => handleItemClick(item)}
                     onContextMenu={(e) => {
                         e.preventDefault();
+                        setSelectedPath(item.path);
                         onExplorerContextMenu(e.clientX, e.clientY, item.path, item.isDirectory);
                     }}
+                    draggable
+                    onDragStart={(e) => handleDragStart(e, item)}
+                    onDragOver={(e) => handleDragOver(e, item)}
+                    onDragLeave={handleDragLeave}
+                    onDrop={(e) => handleDrop(e, item)}
+                    onDragEnd={handleDragEnd}
                 >
                     {item.isDirectory ? (
                         <>
@@ -120,9 +208,17 @@ export default function Sidebar({ width, onExplorerContextMenu }: SidebarProps) 
                         level={level + 1}
                         toggleFolder={toggleFolder}
                         expandedFolders={expandedFolders}
+                        selectedPath={selectedPath}
+                        setSelectedPath={setSelectedPath}
                         openFileByPath={openFileByPath}
                         onContextMenu={onExplorerContextMenu}
                         refreshKey={refreshKey}
+                        dragOverPath={dragOverPath}
+                        onDragStart={handleDragStart}
+                        onDragOver={handleDragOver}
+                        onDragLeave={handleDragLeave}
+                        onDrop={handleDrop}
+                        onDragEnd={handleDragEnd}
                     />
                 )}
             </React.Fragment>
@@ -130,60 +226,71 @@ export default function Sidebar({ width, onExplorerContextMenu }: SidebarProps) 
     };
 
     return (
-        <div className="sidebar" style={{ width: `${width}px` }}>
-            <div className="sidebar-header">
-                <span>EXPLORER</span>
-                <div className="sidebar-actions">
-                    {currentFolderPath && (
-                        <>
-                            <button className="sidebar-action-btn" title="New File" onClick={handleNewFile}>
-                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" /><polyline points="14 2 14 8 20 8" />
-                                    <line x1="12" y1="11" x2="12" y2="17" /><line x1="9" y1="14" x2="15" y2="14" />
-                                </svg>
-                            </button>
-                            <button className="sidebar-action-btn" title="New Folder" onClick={handleNewFolder}>
-                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                                    <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z" />
-                                    <line x1="12" y1="11" x2="12" y2="17" /><line x1="9" y1="14" x2="15" y2="14" />
-                                </svg>
-                            </button>
-                            <button className="sidebar-action-btn" title="Refresh" onClick={() => setRefreshKey(k => k + 1)}>
-                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                                    <path d="M23 4v6h-6M1 20v-6h6M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15" />
-                                </svg>
-                            </button>
-                        </>
+        <>
+            {inlineInput && (
+                <InlineInput
+                    defaultValue=""
+                    placeholder={inlineInput.mode === 'new-file' ? 'File name (e.g. script.pwn)' : 'Folder name...'}
+                    onConfirm={handleInlineConfirm}
+                    onCancel={() => setInlineInput(null)}
+                />
+            )}
+            <div className="sidebar" style={{ width: `${width}px` }}>
+                <div className="sidebar-header">
+                    <span>EXPLORER</span>
+                    <div className="sidebar-actions">
+                        {currentFolderPath && (
+                            <>
+                                <button className="sidebar-action-btn" title="New File" onClick={handleNewFile}>
+                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" /><polyline points="14 2 14 8 20 8" />
+                                        <line x1="12" y1="11" x2="12" y2="17" /><line x1="9" y1="14" x2="15" y2="14" />
+                                    </svg>
+                                </button>
+                                <button className="sidebar-action-btn" title="New Folder" onClick={handleNewFolder}>
+                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                        <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z" />
+                                        <line x1="12" y1="11" x2="12" y2="17" /><line x1="9" y1="14" x2="15" y2="14" />
+                                    </svg>
+                                </button>
+                                <button className="sidebar-action-btn" title="Refresh" onClick={() => setRefreshKey(k => k + 1)}>
+                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                        <path d="M23 4v6h-6M1 20v-6h6M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15" />
+                                    </svg>
+                                </button>
+                            </>
+                        )}
+                        <button className="sidebar-action-btn" title="Close Folder" onClick={() => setCurrentFolderPath(null)}>
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                <line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" />
+                            </svg>
+                        </button>
+                    </div>
+                </div>
+                <div className="sidebar-content">
+                    {currentFolderPath ? (
+                        renderTree(tree)
+                    ) : (
+                        <div className="sidebar-placeholder">
+                            <p>No folder open</p>
+                            <button className="welcome-btn mini primary" onClick={openFolder}>Open Folder</button>
+                        </div>
                     )}
-                    <button className="sidebar-action-btn" title="Close Folder" onClick={() => setCurrentFolderPath(null)}>
-                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                            <line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" />
-                        </svg>
-                    </button>
                 </div>
             </div>
-            <div className="sidebar-content">
-                {currentFolderPath ? (
-                    renderTree(tree)
-                ) : (
-                    <div className="sidebar-placeholder">
-                        <p>No folder open</p>
-                        <button className="welcome-btn mini primary" onClick={openFolder}>Open Folder</button>
-                    </div>
-                )}
-            </div>
-        </div>
+        </>
     );
 }
 
-function SubTree({ path, level, toggleFolder, expandedFolders, openFileByPath, onContextMenu, refreshKey }: any) {
+function SubTree({ path, level, toggleFolder, expandedFolders, selectedPath, setSelectedPath, openFileByPath, onContextMenu, refreshKey, dragOverPath, onDragStart, onDragOver, onDragLeave, onDrop, onDragEnd }: any) {
     const [items, setItems] = useState<FileTreeItem[]>([]);
+    const clickTimers = useRef<Record<string, ReturnType<typeof setTimeout>>>({});
 
     useEffect(() => {
         if (!window.api) return;
-        window.api.readDirectory(path).then(res => {
+        window.api.readDirectory(path).then((res: any) => {
             if (res) {
-                setItems(res.sort((a, b) => {
+                setItems(res.sort((a: FileTreeItem, b: FileTreeItem) => {
                     if (a.isDirectory === b.isDirectory) return a.name.localeCompare(b.name);
                     return a.isDirectory ? -1 : 1;
                 }) as FileTreeItem[]);
@@ -191,21 +298,45 @@ function SubTree({ path, level, toggleFolder, expandedFolders, openFileByPath, o
         });
     }, [path, refreshKey]);
 
+    const handleItemClick = (item: FileTreeItem) => {
+        if (clickTimers.current[item.path]) {
+            clearTimeout(clickTimers.current[item.path]);
+            delete clickTimers.current[item.path];
+            if (item.isDirectory) {
+                toggleFolder(item.path);
+            } else {
+                openFileByPath(item.path);
+            }
+        } else {
+            setSelectedPath(item.path);
+            if (item.isDirectory) {
+                toggleFolder(item.path);
+            }
+            clickTimers.current[item.path] = setTimeout(() => {
+                delete clickTimers.current[item.path];
+            }, 300);
+        }
+    };
+
     return (
         <>
             {items.map(item => (
                 <React.Fragment key={item.path}>
                     <div
-                        className="tree-item"
+                        className={`tree-item${selectedPath === item.path ? ' selected' : ''}${dragOverPath === item.path ? ' drag-over' : ''}`}
                         style={{ paddingLeft: `${level * 12 + 12}px` }}
-                        onClick={() => {
-                            if (item.isDirectory) toggleFolder(item.path);
-                            else openFileByPath(item.path);
-                        }}
+                        onClick={() => handleItemClick(item)}
                         onContextMenu={(e) => {
                             e.preventDefault();
+                            setSelectedPath(item.path);
                             onContextMenu(e.clientX, e.clientY, item.path, item.isDirectory);
                         }}
+                        draggable
+                        onDragStart={(e: React.DragEvent) => onDragStart(e, item)}
+                        onDragOver={(e: React.DragEvent) => onDragOver(e, item)}
+                        onDragLeave={onDragLeave}
+                        onDrop={(e: React.DragEvent) => onDrop(e, item)}
+                        onDragEnd={onDragEnd}
                     >
                         {item.isDirectory ? (
                             <>
@@ -225,7 +356,23 @@ function SubTree({ path, level, toggleFolder, expandedFolders, openFileByPath, o
                         <span className="tab-name">{item.name}</span>
                     </div>
                     {item.isDirectory && expandedFolders.has(item.path) && (
-                        <SubTree path={item.path} level={level + 1} toggleFolder={toggleFolder} expandedFolders={expandedFolders} openFileByPath={openFileByPath} onContextMenu={onContextMenu} />
+                        <SubTree
+                            path={item.path}
+                            level={level + 1}
+                            toggleFolder={toggleFolder}
+                            expandedFolders={expandedFolders}
+                            selectedPath={selectedPath}
+                            setSelectedPath={setSelectedPath}
+                            openFileByPath={openFileByPath}
+                            onContextMenu={onContextMenu}
+                            refreshKey={refreshKey}
+                            dragOverPath={dragOverPath}
+                            onDragStart={onDragStart}
+                            onDragOver={onDragOver}
+                            onDragLeave={onDragLeave}
+                            onDrop={onDrop}
+                            onDragEnd={onDragEnd}
+                        />
                     )}
                 </React.Fragment>
             ))}

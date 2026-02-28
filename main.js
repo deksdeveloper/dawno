@@ -14,6 +14,8 @@ const clientId = '1405068425121763410';
 let rpc = null;
 let rpcEnabled = true;
 
+let rpcReconnectTimer = null;
+
 function initDiscordRPC() {
     if (rpc || !rpcEnabled) return;
 
@@ -21,6 +23,7 @@ function initDiscordRPC() {
         rpc = new DiscordRPC.Client({ transport: 'ipc' });
 
         rpc.on('ready', () => {
+            console.log('[RPC] Discord RPC connected.');
             updateDiscordPresence({
                 details: 'DAWNO Editor',
                 state: 'Idle',
@@ -31,15 +34,27 @@ function initDiscordRPC() {
         });
 
         rpc.on('error', () => {
+            console.log('[RPC] Discord RPC error, will retry...');
             rpc = null;
         });
 
         rpc.login({ clientId }).catch(() => {
+            console.log('[RPC] Discord RPC login failed, will retry...');
             rpc = null;
         });
     } catch (err) {
         rpc = null;
     }
+}
+
+function startRpcReconnectLoop() {
+    if (rpcReconnectTimer) return;
+    rpcReconnectTimer = setInterval(() => {
+        if (rpcEnabled && !rpc) {
+            console.log('[RPC] Attempting reconnect...');
+            initDiscordRPC();
+        }
+    }, 30000); // retry every 30 seconds
 }
 
 function updateDiscordPresence(details) {
@@ -138,6 +153,7 @@ app.whenReady().then(() => {
 
     if (rpcEnabled) {
         setTimeout(initDiscordRPC, 2000);
+        startRpcReconnectLoop();
     }
 });
 
@@ -527,8 +543,29 @@ async function findFileRecursive(startDir, targetNames, maxDepth = 4, currentDep
     return null;
 }
 
+async function findFileWithParents(startDir, targetNames, downDepth = 4, upLevels = 5) {
+    // First search downward from startDir
+    const downResult = await findFileRecursive(startDir, targetNames, downDepth);
+    if (downResult) return downResult;
+
+    // Then search upward through parent directories, each time searching down
+    let current = startDir;
+    for (let i = 0; i < upLevels; i++) {
+        const parent = path.dirname(current);
+        if (parent === current) break; // reached filesystem root
+        current = parent;
+        // Search only immediate children of the parent (depth=1) to avoid redundant deep scans
+        const upResult = await findFileRecursive(current, targetNames, 1);
+        if (upResult) return upResult;
+        // Also do a deeper scan from the parent (limited depth to avoid scanning too much)
+        const deeperResult = await findFileRecursive(current, targetNames, 2);
+        if (deeperResult) return deeperResult;
+    }
+    return null;
+}
+
 ipcMain.handle('detect-server', async (event, folderPath) => {
-    const serverPath = await findFileRecursive(folderPath, ['omp-server.exe', 'samp-server.exe'], 3);
+    const serverPath = await findFileWithParents(folderPath, ['omp-server.exe', 'samp-server.exe'], 4, 5);
     if (serverPath) {
         return { path: serverPath, type: serverPath.toLowerCase().includes('omp') ? 'omp' : 'samp' };
     }
@@ -536,7 +573,7 @@ ipcMain.handle('detect-server', async (event, folderPath) => {
 });
 
 ipcMain.handle('detect-config', async (event, folderPath) => {
-    return await findFileRecursive(folderPath, ['server.cfg', 'config.json'], 3);
+    return await findFileWithParents(folderPath, ['server.cfg', 'config.json'], 4, 5);
 });
 
 

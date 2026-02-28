@@ -297,6 +297,27 @@ body {
   color: var(--text-0);
 }
 
+.tree-item.selected {
+  background: rgba(88, 166, 255, 0.12);
+  color: var(--text-0);
+}
+
+.tree-item.drag-over {
+  background: rgba(88, 166, 255, 0.2);
+  outline: 1px solid var(--accent);
+  outline-offset: -1px;
+  color: var(--text-0);
+}
+
+.tree-item[draggable='true'] {
+  cursor: grab;
+}
+
+.tree-item[draggable='true']:active {
+  cursor: grabbing;
+  opacity: 0.6;
+}
+
 .tree-item .tab-name {
   flex: 1;
   overflow: hidden;
@@ -304,16 +325,9 @@ body {
   white-space: nowrap;
 }
 
-.rename-input {
-  background: var(--bg-0);
-  border: 1px solid var(--accent);
-  color: var(--text-0);
-  font-family: inherit;
-  font-size: 12px;
-  padding: 1px 4px;
-  width: 100%;
-  border-radius: 2px;
-  outline: none;
+/* Keep chevron transition */
+.tree-item .chevron {
+  transition: transform 0.2s;
 }
 
 .folder-icon {
@@ -324,17 +338,6 @@ body {
   color: var(--text-1);
 }
 
-.tree-children {
-  display: none;
-}
-
-.tree-item.expanded .chevron {
-  transform: rotate(90deg);
-}
-
-.tree-item .chevron {
-  transition: transform 0.2s;
-}
 
 /* ─── Resizer ───────────────────────────────────────────────────────────── */
 .resizer {

@@ -20,6 +20,7 @@ import { useSettings } from '../hooks/useSettings';
 import { useFolderWatcher } from '../hooks/useFolderWatcher';
 import { useKeyboardShortcuts } from '../hooks/useKeyboardShortcuts';
 import { useEditorBridge } from '../hooks/useEditorBridge';
+import { useDiscordRpc } from '../hooks/useDiscordRpc';
 
 
 const EditorPanel = dynamic(() => import('../components/EditorPanel'), { ssr: false });
@@ -35,16 +36,33 @@ export default function HomePage() {
   const [encodingPickerOpen, setEncodingPickerOpen] = useState(false);
   const [tabCtxMenu, setTabCtxMenu] = useState<{ x: number; y: number; tabId: number } | null>(null);
   const [explorerCtxMenu, setExplorerCtxMenu] = useState<{ x: number; y: number; path: string; isDirectory: boolean } | null>(null);
+  const tabCtxMenuRef = useRef<HTMLDivElement>(null);
+  const explorerCtxMenuRef = useRef<HTMLDivElement>(null);
 
   const showSidebar = tabs.length > 0 || currentFolderPath !== null;
 
-  
   useSettings();
   useFolderWatcher();
   useKeyboardShortcuts({ setSettingsOpen });
-  useEditorBridge(); 
+  useEditorBridge();
+  useDiscordRpc();
 
-  
+  // Close context menus when clicking outside
+  useEffect(() => {
+    if (!tabCtxMenu && !explorerCtxMenu) return;
+    const handler = (e: MouseEvent) => {
+      if (tabCtxMenu && tabCtxMenuRef.current && !tabCtxMenuRef.current.contains(e.target as Node)) {
+        setTabCtxMenu(null);
+      }
+      if (explorerCtxMenu && explorerCtxMenuRef.current && !explorerCtxMenuRef.current.contains(e.target as Node)) {
+        setExplorerCtxMenu(null);
+      }
+    };
+    document.addEventListener('mousedown', handler);
+    return () => document.removeEventListener('mousedown', handler);
+  }, [tabCtxMenu, explorerCtxMenu]);
+
+
   const isResizing = useRef(false);
 
   const onResizerDown = () => { isResizing.current = true; };
@@ -104,29 +122,32 @@ export default function HomePage() {
       <OutputPanel />
       <StatusBar onEncodingClick={() => setEncodingPickerOpen(true)} />
 
-      {}
+      { }
       {settingsOpen && <SettingsModal onClose={() => setSettingsOpen(false)} />}
       {serverOpen && <ServerModal onClose={() => setServerOpen(false)} />}
       {configOpen && <ConfigModal onClose={() => setConfigOpen(false)} />}
       {encodingPickerOpen && <EncodingPicker onClose={() => setEncodingPickerOpen(false)} />}
 
-      {}
       {tabCtxMenu && (
-        <TabContextMenu
-          x={tabCtxMenu.x}
-          y={tabCtxMenu.y}
-          tabId={tabCtxMenu.tabId}
-          onClose={() => setTabCtxMenu(null)}
-        />
+        <div ref={tabCtxMenuRef}>
+          <TabContextMenu
+            x={tabCtxMenu.x}
+            y={tabCtxMenu.y}
+            tabId={tabCtxMenu.tabId}
+            onClose={() => setTabCtxMenu(null)}
+          />
+        </div>
       )}
       {explorerCtxMenu && (
-        <ExplorerContextMenu
-          x={explorerCtxMenu.x}
-          y={explorerCtxMenu.y}
-          itemPath={explorerCtxMenu.path}
-          isDirectory={explorerCtxMenu.isDirectory}
-          onClose={() => setExplorerCtxMenu(null)}
-        />
+        <div ref={explorerCtxMenuRef}>
+          <ExplorerContextMenu
+            x={explorerCtxMenu.x}
+            y={explorerCtxMenu.y}
+            itemPath={explorerCtxMenu.path}
+            isDirectory={explorerCtxMenu.isDirectory}
+            onClose={() => setExplorerCtxMenu(null)}
+          />
+        </div>
       )}
     </>
   );
