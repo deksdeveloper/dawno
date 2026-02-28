@@ -2,6 +2,7 @@
 
 import { useEditorContext } from '../../context/EditorContext';
 import { useState } from 'react';
+import { useLanguage } from '../../i18n/LanguageContext';
 
 const ENCODINGS = [
     { label: 'UTF-8', value: 'utf-8', desc: 'Unicode (Universal)' },
@@ -27,6 +28,7 @@ const ENCODINGS = [
 
 export default function EncodingPicker({ onClose }: { onClose: () => void }) {
     const { currentEncoding, setCurrentEncoding, appendOutput } = useEditorContext();
+    const { t } = useLanguage();
     const [search, setSearch] = useState('');
 
     const filtered = ENCODINGS.filter(e =>
@@ -36,7 +38,7 @@ export default function EncodingPicker({ onClose }: { onClose: () => void }) {
 
     const handleSelect = (enc: string) => {
         setCurrentEncoding(enc);
-        appendOutput(`Encoding set to ${enc.toUpperCase()}`, 'info');
+        appendOutput(t.encodingPicker.encodingSet(enc.toUpperCase()), 'info');
         onClose();
     };
 
@@ -47,7 +49,7 @@ export default function EncodingPicker({ onClose }: { onClose: () => void }) {
                     <input
                         autoFocus
                         type="text"
-                        placeholder="Select File Encoding..."
+                        placeholder={t.encodingPicker.placeholder}
                         value={search}
                         onChange={e => setSearch(e.target.value)}
                         onKeyDown={e => {
@@ -68,7 +70,7 @@ export default function EncodingPicker({ onClose }: { onClose: () => void }) {
                         </div>
                     ))}
                     {filtered.length === 0 && (
-                        <div className="quick-pick-item" style={{ cursor: 'default' }}>No results found</div>
+                        <div className="quick-pick-item" style={{ cursor: 'default' }}>{t.encodingPicker.noResults}</div>
                     )}
                 </div>
             </div>

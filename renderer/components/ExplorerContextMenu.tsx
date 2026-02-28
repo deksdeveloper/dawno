@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { useEditorContext } from '../context/EditorContext';
 import { useFileOperations } from '../hooks/useFileOperations';
 import InlineInput from './InlineInput';
+import { useLanguage } from '../i18n/LanguageContext';
 
 interface ExplorerContextMenuProps {
     x: number;
@@ -18,6 +19,7 @@ type PendingAction = 'rename' | 'new-file' | 'new-folder' | 'delete-confirm' | n
 export default function ExplorerContextMenu({ x, y, itemPath, isDirectory, onClose }: ExplorerContextMenuProps) {
     const { currentFolderPath, appendOutput, renameTab } = useEditorContext();
     const { openFileByPath } = useFileOperations();
+    const { t } = useLanguage();
     const [pendingAction, setPendingAction] = useState<PendingAction>(null);
 
     const handleAction = async (action: string) => {
@@ -38,14 +40,14 @@ export default function ExplorerContextMenu({ x, y, itemPath, isDirectory, onClo
             case 'copy-path':
                 onClose();
                 navigator.clipboard.writeText(itemPath);
-                appendOutput(`Copied path: ${itemPath}`, 'info');
+                appendOutput(t.output_msgs.copiedPath(itemPath), 'info');
                 break;
             case 'copy-relative':
                 onClose();
                 if (currentFolderPath) {
                     const rel = itemPath.replace(currentFolderPath, '').replace(/^[\\/]/, '');
                     navigator.clipboard.writeText(rel);
-                    appendOutput(`Copied relative path: ${rel}`, 'info');
+                    appendOutput(t.output_msgs.copiedRelative(rel), 'info');
                 }
                 break;
             case 'delete':
@@ -55,13 +57,13 @@ export default function ExplorerContextMenu({ x, y, itemPath, isDirectory, onClo
     };
 
     const handleRenameConfirm = async (newName: string) => {
-        const oldName = itemPath.split(/[\\/]/).pop();
+        const oldName = itemPath.split(/[\\\/]/).pop();
         if (newName !== oldName) {
-            const parent = itemPath.split(/[\\/]/).slice(0, -1).join('\\');
+            const parent = itemPath.split(/[\\\/]/).slice(0, -1).join('\\');
             const newPath = `${parent}\\${newName}`;
             const res = await window.api.moveFile({ src: itemPath, dest: newPath });
             if (!res.success) {
-                appendOutput(`Error renaming: ${res.error}`, 'error');
+                appendOutput(t.output_msgs.errorRenaming(res.error ?? ''), 'error');
             } else {
                 renameTab(itemPath, newPath);
             }
@@ -70,34 +72,33 @@ export default function ExplorerContextMenu({ x, y, itemPath, isDirectory, onClo
     };
 
     const handleNewFileConfirm = async (name: string) => {
-        const basePath = isDirectory ? itemPath : itemPath.split(/[\\/]/).slice(0, -1).join('\\');
+        const basePath = isDirectory ? itemPath : itemPath.split(/[\\\/]/).slice(0, -1).join('\\');
         const newPath = `${basePath}\\${name}`;
         const res = await window.api.createFile(newPath);
-        if (!res.success) appendOutput(`Error creating file: ${res.error}`, 'error');
+        if (!res.success) appendOutput(t.output_msgs.errorCreatingFile(res.error ?? ''), 'error');
         onClose();
     };
 
     const handleNewFolderConfirm = async (name: string) => {
-        const basePath = isDirectory ? itemPath : itemPath.split(/[\\/]/).slice(0, -1).join('\\');
+        const basePath = isDirectory ? itemPath : itemPath.split(/[\\\/]/).slice(0, -1).join('\\');
         const newPath = `${basePath}\\${name}`;
         const res = await window.api.createFolder(newPath);
-        if (!res.success) appendOutput(`Error creating folder: ${res.error}`, 'error');
+        if (!res.success) appendOutput(t.output_msgs.errorCreatingFolder(res.error ?? ''), 'error');
         onClose();
     };
 
     const handleDeleteConfirm = async () => {
         const res = await window.api.deleteFile(itemPath);
-        if (!res.success) appendOutput(`Error deleting: ${res.error}`, 'error');
+        if (!res.success) appendOutput(t.output_msgs.errorDeleting(res.error ?? ''), 'error');
         onClose();
     };
 
-    // Show inline input overlays
     if (pendingAction === 'rename') {
-        const oldName = itemPath.split(/[\\/]/).pop() || '';
+        const oldName = itemPath.split(/[\\\/]/).pop() || '';
         return (
             <InlineInput
                 defaultValue={oldName}
-                placeholder="New name..."
+                placeholder={t.explorer.renamePlaceholder}
                 onConfirm={handleRenameConfirm}
                 onCancel={onClose}
             />
@@ -108,7 +109,7 @@ export default function ExplorerContextMenu({ x, y, itemPath, isDirectory, onClo
         return (
             <InlineInput
                 defaultValue=""
-                placeholder="File name (e.g. script.pwn)"
+                placeholder={t.explorer.newFilePlaceholder}
                 onConfirm={handleNewFileConfirm}
                 onCancel={onClose}
             />
@@ -119,7 +120,7 @@ export default function ExplorerContextMenu({ x, y, itemPath, isDirectory, onClo
         return (
             <InlineInput
                 defaultValue=""
-                placeholder="Folder name..."
+                placeholder={t.explorer.newFolderPlaceholder}
                 onConfirm={handleNewFolderConfirm}
                 onCancel={onClose}
             />
@@ -127,7 +128,7 @@ export default function ExplorerContextMenu({ x, y, itemPath, isDirectory, onClo
     }
 
     if (pendingAction === 'delete-confirm') {
-        const name = itemPath.split(/[\\/]/).pop() || itemPath;
+        const name = itemPath.split(/[\\\/]/).pop() || itemPath;
         return (
             <div
                 style={{
@@ -149,7 +150,7 @@ export default function ExplorerContextMenu({ x, y, itemPath, isDirectory, onClo
                     boxShadow: '0 8px 32px rgba(0,0,0,0.5)',
                 }}>
                     <p style={{ color: 'var(--text-primary, #e6edf3)', fontSize: '13px', margin: '0 0 12px' }}>
-                        Delete <strong>{name}</strong>? This will move it to Trash.
+                        {t.explorer.deleteConfirm(name)}
                     </p>
                     <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end' }}>
                         <button
@@ -163,7 +164,7 @@ export default function ExplorerContextMenu({ x, y, itemPath, isDirectory, onClo
                                 fontSize: '12px',
                                 cursor: 'pointer',
                             }}
-                        >Cancel</button>
+                        >{t.explorer.cancel}</button>
                         <button
                             onClick={handleDeleteConfirm}
                             style={{
@@ -175,7 +176,7 @@ export default function ExplorerContextMenu({ x, y, itemPath, isDirectory, onClo
                                 fontSize: '12px',
                                 cursor: 'pointer',
                             }}
-                        >Delete</button>
+                        >{t.explorer.delete}</button>
                     </div>
                 </div>
             </div>
@@ -190,30 +191,30 @@ export default function ExplorerContextMenu({ x, y, itemPath, isDirectory, onClo
         >
             {!isDirectory && (
                 <div className="menu-item" onClick={() => handleAction('open')}>
-                    <span>Open</span>
+                    <span>{t.explorer.open}</span>
                 </div>
             )}
             <div className="menu-item" onClick={() => handleAction('rename')}>
-                <span>Rename</span>
+                <span>{t.explorer.rename}</span>
                 <span className="kbd">F2</span>
             </div>
             <div className="dropdown-separator" />
             <div className="menu-item" onClick={() => handleAction('new-file')}>
-                <span>New File</span>
+                <span>{t.explorer.newFile}</span>
             </div>
             <div className="menu-item" onClick={() => handleAction('new-folder')}>
-                <span>New Folder</span>
+                <span>{t.explorer.newFolder}</span>
             </div>
             <div className="dropdown-separator" />
             <div className="menu-item" onClick={() => handleAction('copy-path')}>
-                <span>Copy Path</span>
+                <span>{t.explorer.copyPath}</span>
             </div>
             <div className="menu-item" onClick={() => handleAction('copy-relative')}>
-                <span>Copy Relative Path</span>
+                <span>{t.explorer.copyRelativePath}</span>
             </div>
             <div className="dropdown-separator" />
             <div className="menu-item" onClick={() => handleAction('delete')}>
-                <span>Delete</span>
+                <span>{t.explorer.delete}</span>
                 <span className="kbd">Del</span>
             </div>
         </div>

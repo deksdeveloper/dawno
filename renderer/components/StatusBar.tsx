@@ -1,6 +1,7 @@
 'use client';
 
 import { useEditorContext } from '../context/EditorContext';
+import { useLanguage } from '../i18n/LanguageContext';
 
 interface StatusBarProps {
     onEncodingClick: () => void;
@@ -8,10 +9,11 @@ interface StatusBarProps {
 
 export default function StatusBar({ onEncodingClick }: StatusBarProps) {
     const { tabs, activeTabId, currentEncoding, currentFolderPath } = useEditorContext();
-    const activeTab = tabs.find((t) => t.id === activeTabId);
+    const { t } = useLanguage();
+    const activeTab = tabs.find((tab) => tab.id === activeTabId);
 
     const cursor = activeTab?.cursor;
-    const filename = activeTab?.path ?? activeTab?.name ?? 'No file open';
+    const filename = activeTab?.path ?? activeTab?.name ?? t.statusBar.noFileOpen;
 
     return (
         <div className="status-bar">
@@ -27,7 +29,7 @@ export default function StatusBar({ onEncodingClick }: StatusBarProps) {
                         </span>
                         {cursor && (
                             <span className="status-item">
-                                Ln {cursor.lineNumber}, Col {cursor.column}
+                                {t.statusBar.line} {cursor.lineNumber}, {t.statusBar.col} {cursor.column}
                             </span>
                         )}
                     </>

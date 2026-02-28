@@ -40,7 +40,7 @@ export default function HomePage() {
   const tabCtxMenuRef = useRef<HTMLDivElement>(null);
   const explorerCtxMenuRef = useRef<HTMLDivElement>(null);
 
-  const showSidebar = tabs.length > 0 || currentFolderPath !== null;
+  const showSidebar = currentFolderPath !== null;
 
   useSettings();
   useFolderWatcher();

@@ -9,7 +9,7 @@ import React, {
     useState,
 } from 'react';
 import type * as MonacoType from 'monaco-editor';
-
+import { locales, type Language } from '../i18n/index';
 
 
 export interface TabState {
@@ -167,6 +167,7 @@ export function EditorProvider({ children }: { children: React.ReactNode }) {
         theme: 'dark',
         defaultEncoding: 'utf-8',
         discordRPC: true,
+        language: 'en',
     });
     const [currentFolderPath, setCurrentFolderPath] = useState<string | null>(null);
     const [currentEncoding, setCurrentEncoding] = useState('utf-8');
@@ -230,7 +231,7 @@ export function EditorProvider({ children }: { children: React.ReactNode }) {
             setActiveTabId(id);
             return tab;
         },
-        []
+        [monacoRef]
     );
 
     const closeTab = useCallback((id: number) => {
@@ -238,7 +239,9 @@ export function EditorProvider({ children }: { children: React.ReactNode }) {
             const idx = prev.findIndex((t) => t.id === id);
             if (idx === -1) return prev;
             const tab = prev[idx];
-            if (tab.dirty && !confirm(`"${tab.name}" is unsaved. Close anyway?`)) return prev;
+            const lang = (settings.language as Language) || 'en';
+            const locale = locales[lang] ?? locales.en;
+            if (tab.dirty && !confirm(locale.tabs.unsavedConfirm(tab.name))) return prev;
             try { tab.model?.dispose(); } catch { }
             const next = [...prev];
             next.splice(idx, 1);
@@ -251,7 +254,7 @@ export function EditorProvider({ children }: { children: React.ReactNode }) {
             }
             return next;
         });
-    }, []);
+    }, [settings.language]);
 
     const updateTab = useCallback((id: number, changes: Partial<TabState>) => {
         setTabs((prev) => prev.map((t) => (t.id === id ? { ...t, ...changes } : t)));

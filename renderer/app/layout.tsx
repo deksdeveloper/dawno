@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 import { EditorProvider } from '../context/EditorContext';
+import { LanguageProvider } from '../i18n/LanguageContext';
 
 export const metadata: Metadata = {
   title: 'DAWNO',
@@ -14,7 +15,9 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       </head>
       <body>
         <EditorProvider>
-          {children}
+          <LanguageProvider>
+            {children}
+          </LanguageProvider>
         </EditorProvider>
       </body>
     </html>

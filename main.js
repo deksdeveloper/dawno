@@ -1,9 +1,60 @@
 const { app, BrowserWindow, ipcMain, dialog, Menu, shell, protocol } = require('electron');
+const { autoUpdater } = require('electron-updater');
 const path = require('path');
 const fs = require('fs');
 const iconv = require('iconv-lite');
 const { spawn } = require('child_process');
 const DiscordRPC = require('discord-rpc');
+
+// Single Instance Lock
+const gotTheLock = app.requestSingleInstanceLock();
+if (!gotTheLock) {
+    app.quit();
+} else {
+    app.on('second-instance', (event, commandLine, workingDirectory) => {
+        if (mainWindow) {
+            if (mainWindow.isMinimized()) mainWindow.restore();
+            mainWindow.focus();
+
+            const filePath = getFilePathFromArgs(commandLine);
+            if (filePath) {
+                mainWindow.webContents.send('open-external-file', filePath);
+            }
+        }
+    });
+}
+
+function getFilePathFromArgs(argv) {
+    if (!argv || argv.length === 0) return null;
+    const exePath = process.execPath.toLowerCase();
+
+    for (const arg of argv) {
+        if (arg.startsWith('--')) continue;
+        if (arg.toLowerCase() === exePath) continue;
+
+        try {
+            if (fs.existsSync(arg) && fs.statSync(arg).isFile()) {
+                return arg;
+            }
+        } catch (e) { }
+    }
+    return null;
+}
+
+function registerFileProtocol() {
+    if (process.platform !== 'win32') return;
+
+    const exePath = process.execPath;
+    const regQuery = `reg add "HKEY_CURRENT_USER\\Software\\Classes\\.pwn" /ve /t REG_SZ /d "DAWNO.File" /f && ` +
+        `reg add "HKEY_CURRENT_USER\\Software\\Classes\\DAWNO.File" /ve /t REG_SZ /d "PAWN Script" /f && ` +
+        `reg add "HKEY_CURRENT_USER\\Software\\Classes\\DAWNO.File\\DefaultIcon" /ve /t REG_SZ /d "${exePath},0" /f && ` +
+        `reg add "HKEY_CURRENT_USER\\Software\\Classes\\DAWNO.File\\shell\\open\\command" /ve /t REG_SZ /d "\\"${exePath}\\" \\"%1\\"" /f`;
+
+    require('child_process').exec(regQuery, (error) => {
+        if (error) console.error('Failed to register .pwn file association:', error);
+        else console.log('.pwn file association registered successfully.');
+    });
+}
 
 let mainWindow;
 let settingsFile;
@@ -149,6 +200,20 @@ function createWindow() {
 
     mainWindow.once('ready-to-show', () => {
         mainWindow.show();
+
+        // Check for updates on startup
+        if (app.isPackaged) {
+            autoUpdater.checkForUpdatesAndNotify();
+        }
+
+        // Handle initial file opening
+        const initialFile = getFilePathFromArgs(process.argv);
+        if (initialFile) {
+            // Give the renderer a moment to initialize
+            setTimeout(() => {
+                mainWindow.webContents.send('open-external-file', initialFile);
+            }, 1000);
+        }
     });
 
     mainWindow.on('maximize', () => {
@@ -168,6 +233,13 @@ function createWindow() {
 }
 
 app.whenReady().then(() => {
+    if (app.isPackaged) {
+        registerFileProtocol();
+        if (autoUpdater && typeof autoUpdater.checkForUpdatesAndNotify === 'function') {
+            autoUpdater.checkForUpdatesAndNotify().catch(err => console.error('Update check failed:', err));
+        }
+    }
+
     settingsFile = path.join(app.getPath('userData'), 'settings.json');
     loadSettings();
     rpcEnabled = settingsData.discordRPC !== false;

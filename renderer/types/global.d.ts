@@ -62,6 +62,10 @@ declare global {
             detectConfig(folderPath: string): Promise<string | null>;
             readConfigFile(filePath: string): Promise<{ success: boolean; type?: 'json' | 'cfg'; data?: Record<string, unknown>; raw?: string; error?: string }>;
             writeConfigFile(filePath: string, data: Record<string, unknown>, type: 'json' | 'cfg'): Promise<{ success: boolean; error?: string }>;
+
+            onNavBack(cb: () => void): () => void;
+            onNavForward(cb: () => void): () => void;
+            onOpenFile(cb: (filePath: string) => void): () => void;
         };
     }
 
@@ -72,6 +76,7 @@ declare global {
         theme: string;
         defaultEncoding?: string;
         discordRPC?: boolean;
+        language?: string;
     }
 
     interface ProjectConfig {

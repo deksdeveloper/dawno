@@ -1,6 +1,7 @@
 'use client';
 
 import { useEditorContext } from '../context/EditorContext';
+import { useLanguage } from '../i18n/LanguageContext';
 
 interface TabContextMenuProps {
     x: number;
@@ -10,7 +11,8 @@ interface TabContextMenuProps {
 }
 
 export default function TabContextMenu({ x, y, tabId, onClose }: TabContextMenuProps) {
-    const { tabs, closeTab, updateTab, currentFolderPath, appendOutput, setActiveTabId } = useEditorContext();
+    const { tabs, closeTab, currentFolderPath, appendOutput } = useEditorContext();
+    const { t } = useLanguage();
 
     const handleAction = (action: string) => {
         onClose();
@@ -35,7 +37,7 @@ export default function TabContextMenu({ x, y, tabId, onClose }: TabContextMenuP
                 const tab = tabs.find(t => t.id === tabId);
                 if (tab?.path) {
                     navigator.clipboard.writeText(tab.path);
-                    appendOutput(`Copied path: ${tab.path}`, 'info');
+                    appendOutput(t.output_msgs.copiedPath(tab.path), 'info');
                 }
                 break;
             case 'copy-relative-tab':
@@ -43,7 +45,7 @@ export default function TabContextMenu({ x, y, tabId, onClose }: TabContextMenuP
                 if (rtab?.path && currentFolderPath) {
                     const rel = rtab.path.replace(currentFolderPath, '').replace(/^[\\/]/, '');
                     navigator.clipboard.writeText(rel);
-                    appendOutput(`Copied relative path: ${rel}`, 'info');
+                    appendOutput(t.output_msgs.copiedRelative(rel), 'info');
                 }
                 break;
         }
@@ -56,27 +58,27 @@ export default function TabContextMenu({ x, y, tabId, onClose }: TabContextMenuP
             onClick={(e) => e.stopPropagation()}
         >
             <div className="menu-item" onClick={() => handleAction('close')}>
-                <span>Close</span>
+                <span>{t.tabs.close}</span>
                 <span className="kbd">Ctrl+W</span>
             </div>
             <div className="menu-item" onClick={() => handleAction('close-saved')}>
-                <span>Close Saved</span>
+                <span>{t.tabs.closeSaved}</span>
             </div>
             <div className="menu-item" onClick={() => handleAction('close-others')}>
-                <span>Close Others</span>
+                <span>{t.tabs.closeOthers}</span>
             </div>
             <div className="menu-item" onClick={() => handleAction('close-to-right')}>
-                <span>Close to the Right</span>
+                <span>{t.tabs.closeToRight}</span>
             </div>
             <div className="menu-item" onClick={() => handleAction('close-all')}>
-                <span>Close All</span>
+                <span>{t.tabs.closeAll}</span>
             </div>
             <div className="dropdown-separator" />
             <div className="menu-item" onClick={() => handleAction('copy-path')}>
-                <span>Copy Path</span>
+                <span>{t.tabs.copyPath}</span>
             </div>
             <div className="menu-item" onClick={() => handleAction('copy-relative-tab')}>
-                <span>Copy Relative Path</span>
+                <span>{t.tabs.copyRelativePath}</span>
             </div>
         </div>
     );

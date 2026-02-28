@@ -69,6 +69,11 @@ contextBridge.exposeInMainWorld('api', {
         const wrappedCb = () => cb();
         ipcRenderer.on('nav-forward', wrappedCb);
         return () => ipcRenderer.removeListener('nav-forward', wrappedCb);
+    },
+    onOpenFile: (cb) => {
+        const wrappedCb = (e, filePath) => cb(filePath);
+        ipcRenderer.on('open-external-file', wrappedCb);
+        return () => ipcRenderer.removeListener('open-external-file', wrappedCb);
     }
 });
 

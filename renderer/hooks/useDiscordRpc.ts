@@ -7,6 +7,11 @@ export function useDiscordRpc() {
     const { tabs, activeTabId, currentFolderPath, settings } = useEditorContext();
     const lastUpdateRef = useRef<string>('');
 
+    // Derive active tab details explicitly for dependency tracking
+    const activeTab = tabs.find(t => t.id === activeTabId);
+    const activeTabName = activeTab?.name ?? null;
+    const activeTabPath = activeTab?.path ?? null;
+
     useEffect(() => {
         if (typeof window === 'undefined' || !window.api) return;
 
@@ -18,19 +23,18 @@ export function useDiscordRpc() {
 
         window.api.toggleRPC(true);
 
-        const activeTab = tabs.find(t => t.id === activeTabId);
         const folderName = currentFolderPath
-            ? currentFolderPath.split(/[\\/]/).pop() || currentFolderPath
+            ? currentFolderPath.split(/[\\\/]/).pop() || currentFolderPath
             : null;
 
         let details: string;
         let state: string;
 
-        if (activeTab) {
-            details = `Editing: ${activeTab.name}`;
+        if (activeTabName) {
+            details = `Editing: ${activeTabName}`;
             state = folderName ? `in ${folderName}` : 'DAWNO Editor';
         } else if (folderName) {
-            details = `DAWNO Editor`;
+            details = 'DAWNO Editor';
             state = `Browsing: ${folderName}`;
         } else {
             details = 'DAWNO Editor';
@@ -48,5 +52,5 @@ export function useDiscordRpc() {
             largeImageText: 'DAWNO Editor',
             instance: false,
         });
-    }, [activeTabId, tabs, currentFolderPath, settings.discordRPC]);
+    }, [activeTabId, activeTabName, activeTabPath, currentFolderPath, settings.discordRPC]);
 }

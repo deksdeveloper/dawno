@@ -2,24 +2,27 @@
 
 import { useEditorContext } from '../../context/EditorContext';
 import { useState } from 'react';
+import { useLanguage } from '../../i18n/LanguageContext';
+import { LANGUAGE_NAMES, type Language } from '../../i18n/index';
 
 export default function SettingsModal({ onClose }: { onClose: () => void }) {
     const { settings, setSettings, appendOutput } = useEditorContext();
+    const { t } = useLanguage();
     const [localSettings, setLocalSettings] = useState({ ...settings });
 
     const handleSave = async () => {
         const res = await window.api.saveSettings(localSettings);
         if (res) {
             setSettings(res);
-            appendOutput('Settings saved successfully.', 'success');
+            appendOutput(t.settingsModal.savedSuccess, 'success');
             onClose();
         }
     };
 
     const browseFile = async (field: 'compilerPath') => {
         const path = await window.api.browseForFile({
-            title: 'Select Compiler',
-            filters: [{ name: 'Executables', extensions: ['exe'] }]
+            title: t.settingsModal.selectCompiler,
+            filters: [{ name: t.settingsModal.executables, extensions: ['exe'] }]
         });
         if (path) setLocalSettings(prev => ({ ...prev, [field]: path }));
     };
@@ -28,14 +31,14 @@ export default function SettingsModal({ onClose }: { onClose: () => void }) {
         <div className="modal-overlay" onClick={onClose}>
             <div className="modal" onClick={e => e.stopPropagation()}>
                 <div className="modal-header">
-                    <div className="modal-title">Preferences</div>
+                    <div className="modal-title">{t.settingsModal.title}</div>
                     <button className="modal-close" onClick={onClose}>&times;</button>
                 </div>
                 <div className="modal-body">
                     <div className="settings-section">
-                        <h3>Compiler</h3>
+                        <h3>{t.settingsModal.compiler}</h3>
                         <div className="settings-row">
-                            <label>Compiler Path (pawncc.exe)</label>
+                            <label>{t.settingsModal.compilerPath}</label>
                             <div className="settings-file-row">
                                 <input
                                     type="text"
@@ -43,15 +46,15 @@ export default function SettingsModal({ onClose }: { onClose: () => void }) {
                                     onChange={e => setLocalSettings({ ...localSettings, compilerPath: e.target.value })}
                                     placeholder="C:\...\pawncc.exe"
                                 />
-                                <button className="btn-browse" onClick={() => browseFile('compilerPath')}>Browse</button>
+                                <button className="btn-browse" onClick={() => browseFile('compilerPath')}>{t.settingsModal.browse}</button>
                             </div>
                         </div>
                     </div>
 
                     <div className="settings-section">
-                        <h3>Editor</h3>
+                        <h3>{t.settingsModal.editor}</h3>
                         <div className="settings-row">
-                            <label>Font Size</label>
+                            <label>{t.settingsModal.fontSize}</label>
                             <div className="settings-inline">
                                 <input
                                     type="range"
@@ -66,7 +69,7 @@ export default function SettingsModal({ onClose }: { onClose: () => void }) {
                     </div>
 
                     <div className="settings-section">
-                        <h3>Integration</h3>
+                        <h3>{t.settingsModal.integration}</h3>
                         <div className="settings-row checkbox-row">
                             <input
                                 id="rpc-check"
@@ -77,13 +80,36 @@ export default function SettingsModal({ onClose }: { onClose: () => void }) {
                                     window.api.toggleRPC(e.target.checked);
                                 }}
                             />
-                            <label htmlFor="rpc-check">Discord Rich Presence</label>
+                            <label htmlFor="rpc-check">{t.settingsModal.discordRPC}</label>
+                        </div>
+                    </div>
+
+                    <div className="settings-section">
+                        <h3>{t.settingsModal.language}</h3>
+                        <div className="settings-row">
+                            <select
+                                value={localSettings.language ?? 'en'}
+                                onChange={e => setLocalSettings({ ...localSettings, language: e.target.value })}
+                                style={{
+                                    background: 'var(--bg-input, #0d1117)',
+                                    border: '1px solid var(--border-color, #30363d)',
+                                    borderRadius: '4px',
+                                    color: 'var(--text-primary, #e6edf3)',
+                                    padding: '4px 8px',
+                                    fontSize: '13px',
+                                    width: '100%',
+                                }}
+                            >
+                                {(Object.entries(LANGUAGE_NAMES) as [Language, string][]).map(([code, name]) => (
+                                    <option key={code} value={code}>{name}</option>
+                                ))}
+                            </select>
                         </div>
                     </div>
                 </div>
                 <div className="modal-footer">
-                    <button className="btn-cancel" onClick={onClose}>Cancel</button>
-                    <button className="btn-save-settings" onClick={handleSave}>Save Changes</button>
+                    <button className="btn-cancel" onClick={onClose}>{t.settingsModal.cancel}</button>
+                    <button className="btn-save-settings" onClick={handleSave}>{t.settingsModal.saveChanges}</button>
                 </div>
             </div>
         </div>

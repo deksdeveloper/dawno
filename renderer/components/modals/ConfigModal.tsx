@@ -2,9 +2,11 @@
 
 import { useEditorContext } from '../../context/EditorContext';
 import { useState, useEffect } from 'react';
+import { useLanguage } from '../../i18n/LanguageContext';
 
 export default function ConfigModal({ onClose }: { onClose: () => void }) {
     const { currentFolderPath, appendOutput } = useEditorContext();
+    const { t } = useLanguage();
     const [configPath, setConfigPath] = useState('');
     const [configRows, setConfigRows] = useState<Array<{ key: string, value: string }>>([]);
     const [configType, setConfigType] = useState<'json' | 'cfg'>('json');
@@ -31,7 +33,6 @@ export default function ConfigModal({ onClose }: { onClose: () => void }) {
                 const key = keys[i];
                 if (i === keys.length - 1) {
                     try {
-
                         if ((v.startsWith('[') && v.endsWith(']'))) {
                             current[key] = JSON.parse(v);
                         } else if (v === 'true') current[key] = true;
@@ -62,7 +63,7 @@ export default function ConfigModal({ onClose }: { onClose: () => void }) {
 
             setConfigRows(rows);
         } else if (res.error) {
-            appendOutput(`Error loading config: ${res.error}`, 'error');
+            appendOutput(t.configModal.errorLoading(res.error), 'error');
         }
     };
 
@@ -83,10 +84,10 @@ export default function ConfigModal({ onClose }: { onClose: () => void }) {
 
         const res = await window.api.writeConfigFile(configPath, finalData, configType);
         if (res.success) {
-            appendOutput('Config saved.', 'success');
+            appendOutput(t.configModal.saved, 'success');
             onClose();
         } else {
-            appendOutput(`Save failed: ${res.error}`, 'error');
+            appendOutput(t.configModal.errorSaving(res.error ?? ''), 'error');
         }
     };
 
@@ -100,8 +101,8 @@ export default function ConfigModal({ onClose }: { onClose: () => void }) {
 
     const browseConfig = async () => {
         const path = await window.api.browseForFile({
-            title: 'Select Config File',
-            filters: [{ name: 'Config Files', extensions: ['json', 'cfg'] }]
+            title: t.configModal.selectConfig,
+            filters: [{ name: t.configModal.configFiles, extensions: ['json', 'cfg'] }]
         });
         if (path) loadConfig(path);
     };
@@ -110,25 +111,25 @@ export default function ConfigModal({ onClose }: { onClose: () => void }) {
         <div className="modal-overlay" onClick={onClose}>
             <div className="modal wide" onClick={e => e.stopPropagation()}>
                 <div className="modal-header">
-                    <div className="modal-title">Config Editor</div>
+                    <div className="modal-title">{t.configModal.title}</div>
                     <button className="modal-close" onClick={onClose}>&times;</button>
                 </div>
                 <div className="modal-body overflow-hidden">
                     <div className="config-path-row">
                         <div style={{ flex: 1 }}>
-                            <div style={{ fontSize: '12px', fontWeight: 600 }}>Configuration File</div>
-                            <div style={{ fontFamily: 'var(--font-mono)', fontSize: '11px', color: 'var(--text-1)' }}>{configPath || 'None selected'}</div>
+                            <div style={{ fontSize: '12px', fontWeight: 600 }}>{t.configModal.configFile}</div>
+                            <div style={{ fontFamily: 'var(--font-mono)', fontSize: '11px', color: 'var(--text-1)' }}>{configPath || t.configModal.noneSelected}</div>
                         </div>
                         {configPath && <span className="config-type-badge">{configType}</span>}
-                        <button className="btn-browse" onClick={browseConfig}>Browse</button>
+                        <button className="btn-browse" onClick={browseConfig}>{t.configModal.browse}</button>
                     </div>
 
                     <div className="config-table-wrapper">
                         <table className="config-table">
                             <thead>
                                 <tr>
-                                    <th style={{ width: '40%' }}>Key</th>
-                                    <th>Value</th>
+                                    <th style={{ width: '40%' }}>{t.configModal.key}</th>
+                                    <th>{t.configModal.value}</th>
                                     <th style={{ width: '40px' }}></th>
                                 </tr>
                             </thead>
@@ -145,11 +146,11 @@ export default function ConfigModal({ onClose }: { onClose: () => void }) {
                             </tbody>
                         </table>
                     </div>
-                    <button className="btn-add-include" onClick={addRow}>+ Add Row</button>
+                    <button className="btn-add-include" onClick={addRow}>{t.configModal.addRow}</button>
                 </div>
                 <div className="modal-footer">
-                    <button className="btn-cancel" onClick={onClose}>Cancel</button>
-                    <button className="btn-save-settings" onClick={handleSave}>Save Config</button>
+                    <button className="btn-cancel" onClick={onClose}>{t.configModal.cancel}</button>
+                    <button className="btn-save-settings" onClick={handleSave}>{t.configModal.saveConfig}</button>
                 </div>
             </div>
         </div>

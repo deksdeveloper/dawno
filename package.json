@@ -8,6 +8,7 @@
     "dev:next": "npm run dev --prefix renderer",
     "build": "npm run build --prefix renderer",
     "start": "electron .",
+    "package": "npm run build --prefix renderer && electron-packager . DAWNO --platform=win32 --arch=x64 --out=dist --icon=assets/icon.ico --overwrite --ignore=\"(^/dist|^/renderer/node_modules|^/renderer/src|^/renderer/app|^/renderer/components|^/renderer/context|^/renderer/hooks|^/renderer/lib|^/renderer/styles|^/renderer/pawn-lib|^/renderer/public|^/renderer/.next|^/renderer/tsconfig.json|^/renderer/next.config.ts|^/renderer/package-lock.json|^\\.git)\" && node scripts/build-installer.js",
     "postinstall": "npm install --prefix renderer"
   },
   "keywords": [
@@ -20,9 +21,12 @@
   "license": "MIT",
   "dependencies": {
     "discord-rpc": "^4.0.1",
+    "electron-updater": "^6.8.3",
     "iconv-lite": "^0.7.2"
   },
   "devDependencies": {
-    "electron": "^33.0.0"
+    "electron": "^33.0.0",
+    "electron-packager": "^17.1.1",
+    "innosetup-compiler": "^6.3.1"
   }
 }
