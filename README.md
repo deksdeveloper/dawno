@@ -1,4 +1,4 @@
-# DAWNO - SA-MP PAWN Editor
+# DAWNO - PAWN Editor
 
 DAWNO is a modern, performance-oriented PAWN code editor designed specifically for SA-MP (San Andreas Multiplayer) and open.mp developers. It serves as a modern alternative to the classic Pawno editor, built using Next.js, Electron, and Monaco Editor technologies.
 
