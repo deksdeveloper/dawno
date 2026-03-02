@@ -74,6 +74,16 @@ Current Supported Languages:
 - English
 - Turkish
 - German
+- Arabic
+- Spanish
+- French
+- Italian
+- Japanese
+- Korean
+- Portuguese
+- Russian
+- Vietnamese
+- Chinese
 
 ## License
 
