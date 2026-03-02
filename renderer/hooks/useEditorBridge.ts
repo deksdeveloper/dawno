@@ -7,13 +7,18 @@ export function useEditorBridge() {
     const { tabs, activeTabId, setActiveTabId, createTab, updateTab, settings, currentEncoding, appendOutput, clearOutput, editorRef } = useEditorContext();
 
     useEffect(() => {
+        if (typeof window === 'undefined' || !window.api) return;
 
         const handleSaveRequest = async (e: any) => {
             const activeTab = tabs.find(t => t.id === activeTabId);
-            if (!activeTab || !activeTab.model) return;
+            if (!activeTab || !activeTab.model) {
+                console.warn('[useEditorBridge] Save requested but no active tab or model found.');
+                return;
+            }
 
             const { isSaveAs } = e.detail;
             const content = activeTab.model.getValue();
+            console.log(`[useEditorBridge] Saving tab ${activeTab.id} (${activeTab.name}), content length: ${content.length}, isSaveAs: ${isSaveAs}`);
 
             const savedPath = await window.api.saveFile({
                 filePath: isSaveAs ? null : activeTab.path,
@@ -22,9 +27,12 @@ export function useEditorBridge() {
             });
 
             if (savedPath) {
+                console.log(`[useEditorBridge] File saved successfully to: ${savedPath}`);
                 const name = savedPath.split(/[\\/]/).pop() || 'untitled';
                 updateTab(activeTab.id, { path: savedPath, name, dirty: false });
                 appendOutput(`File saved: ${savedPath}`, 'success');
+            } else {
+                console.warn('[useEditorBridge] Save operation cancelled or failed (no path returned).');
             }
         };
 
@@ -79,12 +87,6 @@ export function useEditorBridge() {
 
         // Handle opening files from the OS (file associations / second instance)
         const removeOpenFileListener = window.api.onOpenFile(async (filePath) => {
-            const existingTab = tabs.find(t => t.path === filePath);
-            if (existingTab) {
-                setActiveTabId(existingTab.id);
-                return;
-            }
-
             try {
                 const res = await window.api.readFile(filePath, currentEncoding);
                 if (res.error || res.content === null) {
@@ -92,7 +94,12 @@ export function useEditorBridge() {
                     return;
                 }
                 const fileName = filePath.split(/[\\/]/).pop() || 'untitled.pwn';
-                createTab(fileName, filePath, res.content);
+                const tab = createTab(fileName, filePath, res.content);
+                if (!tab) {
+                    // This can happen if Monaco isn't ready yet. Log and bail out safely.
+                    console.error('[useEditorBridge] createTab returned null — Monaco may not be initialized yet.');
+                    appendOutput(`Failed to open file: editor not ready yet. Please try again.`, 'error');
+                }
             } catch (err) {
                 appendOutput(`Failed to open external file: ${filePath}`, 'error');
             }

@@ -20,6 +20,7 @@
   "author": "Deks",
   "license": "MIT",
   "dependencies": {
+    "adm-zip": "^0.5.16",
     "discord-rpc": "^4.0.1",
     "electron-updater": "^6.8.3",
     "iconv-lite": "^0.7.2"

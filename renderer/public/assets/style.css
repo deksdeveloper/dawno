@@ -1641,3 +1641,563 @@ input[type="range"] {
   background: rgba(248, 81, 73, 0.15);
   color: var(--red);
 }
+
+/* ─── Plugin Browser ────────────────────────────────────────────────────── */
+.plugin-browser-btn {
+  color: var(--purple) !important;
+}
+
+.plugin-browser-btn:hover {
+  background: rgba(188, 140, 255, 0.12) !important;
+}
+
+.pb-side-panel {
+  position: fixed !important;
+  top: var(--titlebar-h);
+  right: 0;
+  bottom: 0;
+  width: 420px !important;
+  max-width: 90vw !important;
+  background: var(--bg-1) !important;
+  border-left: 1px solid var(--border) !important;
+  border-radius: 0 !important;
+  display: flex !important;
+  flex-direction: column !important;
+  z-index: 1000;
+  box-shadow: -8px 0 32px rgba(0, 0, 0, 0.45) !important;
+  animation: pb-slide-in 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+  margin: 0 !important;
+}
+
+@keyframes pb-slide-in {
+  from {
+    transform: translateX(100%);
+  }
+
+  to {
+    transform: translateX(0);
+  }
+}
+
+.pb-overlay {
+  background: rgba(0, 0, 0, 0.25) !important;
+  backdrop-filter: blur(1px);
+}
+
+.pb-search-row {
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--border);
+  flex-shrink: 0;
+}
+
+.pb-search-wrap {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.pb-search-icon {
+  position: absolute;
+  left: 10px;
+  color: var(--text-2);
+  pointer-events: none;
+}
+
+.pb-search {
+  width: 100%;
+  background: var(--bg-0);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  color: var(--text-0);
+  font-size: 13px;
+  padding: 7px 10px 7px 34px;
+  outline: none;
+  transition: all 0.2s ease;
+  user-select: text;
+}
+
+.pb-search:hover {
+  border-color: var(--text-2);
+  background: var(--bg-1);
+}
+
+.pb-search:focus {
+  border-color: var(--accent);
+  background: var(--bg-0);
+  box-shadow: 0 0 0 3px rgba(88, 166, 255, 0.1);
+}
+
+/* Banners */
+.pb-banner {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 16px;
+  font-size: 12px;
+  flex-shrink: 0;
+}
+
+.pb-banner-warn {
+  background: rgba(210, 153, 34, 0.12);
+  border-bottom: 1px solid rgba(210, 153, 34, 0.25);
+  color: var(--yellow);
+}
+
+.pb-banner-info {
+  background: rgba(88, 166, 255, 0.08);
+  border-bottom: 1px solid rgba(88, 166, 255, 0.2);
+  color: var(--accent);
+}
+
+.pb-banner-btn {
+  margin-left: auto;
+  background: none;
+  border: 1px solid currentColor;
+  border-radius: 4px;
+  color: inherit;
+  font-size: 11px;
+  padding: 3px 10px;
+  cursor: pointer;
+  transition: background 0.1s;
+  white-space: nowrap;
+}
+
+.pb-banner-btn:hover {
+  background: rgba(255, 255, 255, 0.1);
+}
+
+/* Body */
+.pb-body {
+  overflow-y: auto !important;
+  flex: 1;
+  padding: 14px !important;
+}
+
+/* Grid */
+.pb-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 12px;
+}
+
+/* Card */
+.pb-card {
+  background: var(--bg-2);
+  background: linear-gradient(165deg, var(--bg-2) 0%, var(--bg-1) 100%);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative;
+  overflow: hidden;
+}
+
+.pb-card::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: linear-gradient(90deg, transparent, var(--accent), transparent);
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.pb-card:hover {
+  border-color: rgba(88, 166, 255, 0.5);
+  box-shadow: 0 12px 24px rgba(0, 0, 0, 0.5);
+  transform: translateY(-2px);
+  background: linear-gradient(165deg, var(--bg-3) 0%, var(--bg-2) 100%);
+}
+
+.pb-card:hover::after {
+  opacity: 1;
+}
+
+.pb-card.pb-card-done {
+  border-color: var(--green);
+  box-shadow: 0 0 0 1px rgba(63, 185, 80, 0.3);
+}
+
+.pb-card-header {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.pb-card-title-row {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.pb-card-name {
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--text-0);
+  letter-spacing: -0.01em;
+  flex-shrink: 0;
+}
+
+.pb-card-badges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+.pb-badge {
+  font-size: 9px;
+  font-weight: 800;
+  padding: 3px 8px;
+  border-radius: 6px;
+  letter-spacing: 0.03em;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+}
+
+.pb-badge-os,
+.pb-badge-windows {
+  background: rgba(88, 166, 255, 0.15);
+  color: var(--accent);
+}
+
+.pb-badge-linux {
+  background: rgba(63, 185, 80, 0.15);
+  color: var(--green);
+}
+
+.pb-badge-omp {
+  background: rgba(255, 166, 87, 0.15);
+  color: var(--orange);
+}
+
+.pb-badge-dest {
+  background: rgba(255, 166, 87, 0.12);
+  color: var(--orange);
+}
+
+.pb-badge-dest-plugins {
+  background: rgba(139, 148, 158, 0.12);
+  color: var(--text-1);
+}
+
+.pb-card-desc {
+  font-size: 12px;
+  color: var(--text-1);
+  line-height: 1.5;
+}
+
+.pb-card-repo {
+  font-size: 11px;
+  color: var(--accent);
+  text-decoration: none;
+  opacity: 0.8;
+  transition: opacity 0.1s;
+  cursor: default;
+}
+
+.pb-card-reqs {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px;
+  margin-top: 2px;
+}
+
+.pb-reqs-label {
+  font-size: 11px;
+  color: var(--text-2);
+}
+
+.pb-req-tag {
+  font-size: 10px;
+  background: var(--bg-3);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  padding: 1px 6px;
+  color: var(--text-1);
+  font-family: var(--font-mono);
+}
+
+/* Controls */
+.pb-card-controls {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.pb-version-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+
+.pb-version-label {
+  font-size: 11px;
+  color: var(--text-2);
+  white-space: nowrap;
+  flex-shrink: 0;
+  min-width: 65px;
+}
+
+.pb-select {
+  flex: 1;
+  min-width: 140px;
+  background: var(--bg-0);
+  border: 1px solid var(--border);
+  border-radius: 5px;
+  color: var(--text-0);
+  font-size: 11px;
+  padding: 5px 8px;
+  outline: none;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.pb-select:focus {
+  border-color: var(--accent);
+}
+
+.pb-select:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
+.pb-card-error {
+  font-size: 11px;
+  color: var(--red);
+  background: rgba(248, 81, 73, 0.08);
+  border-radius: 5px;
+  padding: 5px 8px;
+}
+
+/* Install button */
+.pb-install-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  height: 36px;
+  border-radius: 8px;
+  border: none;
+  background: linear-gradient(180deg, var(--accent) 0%, var(--accent2) 100%);
+  color: #fff;
+  font-size: 13px;
+  font-weight: 600;
+  font-family: var(--font-ui);
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  width: 100%;
+  box-shadow: 0 2px 8px rgba(56, 139, 253, 0.3);
+}
+
+.pb-install-btn:hover:not(:disabled) {
+  background: linear-gradient(180deg, #60b0ff 0%, #4090ff 100%);
+  box-shadow: 0 4px 12px rgba(56, 139, 253, 0.45);
+  transform: translateY(-1px);
+}
+
+.pb-install-btn:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.pb-install-btn.pb-install-done {
+  background: var(--green) !important;
+}
+
+.pb-install-btn.pb-install-busy {
+  background: var(--bg-3);
+  cursor: default;
+}
+
+/* Spinner */
+@keyframes pb-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.pb-spinner {
+  display: inline-block;
+  width: 12px;
+  height: 12px;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  border-top-color: #fff;
+  border-radius: 50%;
+  animation: pb-spin 0.7s linear infinite;
+}
+
+/* Post-install prompt */
+.pb-post-install-prompt {
+  background: var(--bg-3);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 10px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  animation: pb-fade-in 0.2s ease;
+}
+
+@keyframes pb-fade-in {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.pb-post-install-prompt p {
+  font-size: 12px;
+  color: var(--text-0);
+  line-height: 1.4;
+}
+
+.pb-prompt-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.pb-btn {
+  flex: 1;
+  padding: 5px 0;
+  border-radius: 5px;
+  border: 1px solid var(--border);
+  font-size: 12px;
+  font-weight: 600;
+  font-family: var(--font-ui);
+  cursor: pointer;
+  transition: background 0.1s;
+}
+
+.pb-btn-yes {
+  background: rgba(63, 185, 80, 0.15);
+  color: var(--green);
+  border-color: rgba(63, 185, 80, 0.3);
+}
+
+.pb-btn-yes:hover:not(:disabled) {
+  background: rgba(63, 185, 80, 0.25);
+}
+
+.pb-btn-no {
+  background: var(--bg-2);
+  color: var(--text-1);
+}
+
+.pb-btn-no:hover:not(:disabled) {
+  background: var(--bg-3);
+}
+
+.pb-btn:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
+.pb-prompt-done {
+  flex-direction: row !important;
+  align-items: center;
+  background: rgba(63, 185, 80, 0.1) !important;
+  border-color: rgba(63, 185, 80, 0.3) !important;
+  color: var(--green);
+  font-weight: 600;
+}
+
+.pb-prompt-success-icon {
+  font-size: 16px;
+}
+
+.pb-empty {
+  color: var(--text-2);
+  text-align: center;
+  padding: 32px;
+  font-size: 13px;
+  grid-column: 1 / -1;
+}
+
+/* Settings List (for Include Paths) */
+.settings-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-top: 8px;
+}
+
+.settings-list-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: var(--bg-0);
+  padding: 6px 10px;
+  border-radius: 4px;
+  border: 1px solid var(--border);
+}
+
+.settings-list-item span {
+  flex: 1;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--text-1);
+  word-break: break-all;
+}
+
+.btn-list-remove {
+  background: none;
+  border: none;
+  color: var(--text-2);
+  cursor: pointer;
+  font-size: 16px;
+  line-height: 1;
+  padding: 0 4px;
+  transition: color 0.1s;
+}
+
+.btn-list-remove:hover {
+  color: var(--red);
+}
+
+.btn-add-path {
+  margin-top: 8px;
+  background: var(--bg-1);
+  border: 1px dashed var(--border);
+  color: var(--text-1);
+  padding: 6px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 12px;
+  transition: all 0.1s;
+  width: 100%;
+}
+
+.btn-add-path:hover {
+  border-color: var(--accent);
+  color: var(--text-0);
+  background: var(--bg-2);
+}
+
+
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.spin {
+  animation: spin 1s linear infinite;
+}

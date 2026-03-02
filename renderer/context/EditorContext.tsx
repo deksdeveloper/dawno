@@ -39,6 +39,8 @@ export interface EditorContextValue {
     setActiveTabId: (id: number | null) => void;
     createTab: (name: string, path: string | null, content: string, state?: Partial<TabState>) => TabState | null;
     closeTab: (id: number) => void;
+    closeTabs: (ids: number[]) => void;
+    closeAllTabs: () => void;
     updateTab: (id: number, changes: Partial<TabState>) => void;
     renameTab: (oldPath: string, newPath: string) => void;
     saveViewState: (id: number) => void;
@@ -82,6 +84,7 @@ export interface EditorContextValue {
     tabCounterRef: React.MutableRefObject<number>;
     isProgrammaticUpdate: React.MutableRefObject<boolean>;
     shouldPreventFocus: React.MutableRefObject<boolean>;
+    activeTabIdRef: React.MutableRefObject<number | null>;
 }
 
 
@@ -168,6 +171,10 @@ export function EditorProvider({ children }: { children: React.ReactNode }) {
         defaultEncoding: 'utf-8',
         discordRPC: true,
         language: 'en',
+        minimap: true,
+        wordWrap: true,
+        autoSave: false,
+        autoSaveDelay: 1000,
     });
     const [currentFolderPath, setCurrentFolderPath] = useState<string | null>(null);
     const [currentEncoding, setCurrentEncoding] = useState('utf-8');
@@ -184,6 +191,48 @@ export function EditorProvider({ children }: { children: React.ReactNode }) {
     const isProgrammaticUpdate = useRef(false);
     const shouldPreventFocus = useRef(false);
     const outputLineIdRef = useRef(0);
+    const activeTabIdRef = useRef<number | null>(null);
+    const prevTabsRef = useRef<TabState[]>([]);
+
+    // Keep activeTabIdRef in sync for use in Monaco callbacks (avoid stale state)
+    useEffect(() => {
+        activeTabIdRef.current = activeTabId;
+    }, [activeTabId]);
+
+    // Lazy Model Disposal Effect:
+    // Disposes models ONLY after they have been removed from the 'tabs' state.
+    // This allows React components like EditorPanel to finish their final render
+    // cycle before the model vanishes, preventing "Model is disposed" crashes.
+    useEffect(() => {
+        const currentModelIds = new Set(tabs.map(t => t.id));
+        const modelsToDispose: TabState[] = [];
+
+        for (const prevTab of prevTabsRef.current) {
+            if (!currentModelIds.has(prevTab.id)) {
+                modelsToDispose.push(prevTab);
+            }
+        }
+
+        // Update ref for next comparison
+        prevTabsRef.current = [...tabs];
+
+        if (modelsToDispose.length === 0) return;
+
+        // Perform disposal in a microtask to be extra safe
+        const timer = setTimeout(() => {
+            modelsToDispose.forEach(tab => {
+                try {
+                    if (tab.model && !tab.model.isDisposed()) {
+                        tab.model.dispose();
+                    }
+                } catch (e) {
+                    console.error('Failed to dispose model lazily:', e);
+                }
+            });
+        }, 0);
+
+        return () => clearTimeout(timer);
+    }, [tabs]);
 
 
     useEffect(() => {
@@ -222,39 +271,114 @@ export function EditorProvider({ children }: { children: React.ReactNode }) {
             const monaco = monacoRef.current;
             if (!monaco) return null;
 
+            // Check if a tab with this path already exists to prevent duplicate tabs
+            if (path) {
+                const existingTab = tabs.find(t => t.path === path);
+                if (existingTab) {
+                    setActiveTabId(existingTab.id);
+                    return existingTab;
+                }
+            }
+
             tabCounterRef.current += 1;
             const id = tabCounterRef.current;
-            const model = monaco.editor.createModel(content, 'pawn');
+
+            // Use Uri.file for actual filesystem paths to handle Windows backslashes correctly
+            // Use a custom scheme for untitled tabs
+            const modelUri = path
+                ? monaco.Uri.file(path)
+                : monaco.Uri.parse(`dawno-untitled://${id}`);
+
+            // Robust model retrieval/creation
+            let model = monaco.editor.getModel(modelUri);
+            if (!model) {
+                console.log(`[EditorContext] Creating new model for URI: ${modelUri.toString()}`);
+                try {
+                    model = monaco.editor.createModel(content, 'pawn', modelUri);
+                } catch (err) {
+                    console.error('[EditorContext] Failed to create model:', err);
+                    // Fallback to a unique ID if creation failed (rare URI conflict)
+                    const fallbackUri = monaco.Uri.parse(`dawno-fallback://${Date.now()}-${id}`);
+                    console.log(`[EditorContext] Falling back to URI: ${fallbackUri.toString()}`);
+                    model = monaco.editor.createModel(content, 'pawn', fallbackUri);
+                }
+            } else {
+                console.log(`[EditorContext] Model already exists for URI: ${modelUri.toString()}`);
+                // If model exists, update content only if necessary.
+                // We update if the current model value is empty and new content is provided,
+                // OR if the model is not dirty and content changed (forced update from disk).
+                const currentVal = model.getValue();
+                const existingTab = tabs.find(t => t.id === id); // This might be null if we're creating
+                const isDirty = existingTab ? existingTab.dirty : false;
+
+                if (content !== undefined && content !== null && currentVal !== content && (currentVal === '' || !isDirty)) {
+                    console.log(`[EditorContext] Updating existing model content. (Dirty: ${isDirty})`);
+                    try {
+                        isProgrammaticUpdate.current = true;
+                        model.setValue(content);
+                    } finally {
+                        isProgrammaticUpdate.current = false;
+                    }
+                }
+            }
+
             const tab: TabState = { id, name, path, model, dirty: false, ...state };
+            console.log(`[EditorContext] Tab created/retrieved: ${id} (${name}), path: ${path}`);
 
             setTabs((prev) => [...prev, tab]);
             setActiveTabId(id);
             return tab;
         },
-        [monacoRef]
+        [monacoRef, tabs, setActiveTabId]
     );
 
-    const closeTab = useCallback((id: number) => {
-        setTabs((prev) => {
-            const idx = prev.findIndex((t) => t.id === id);
-            if (idx === -1) return prev;
-            const tab = prev[idx];
-            const lang = (settings.language as Language) || 'en';
-            const locale = locales[lang] ?? locales.en;
-            if (tab.dirty && !confirm(locale.tabs.unsavedConfirm(tab.name))) return prev;
-            try { tab.model?.dispose(); } catch { }
-            const next = [...prev];
-            next.splice(idx, 1);
+    const closeTabs = useCallback((ids: number[]) => {
+        // 1. Identify which tabs exist and need closing
+        const tabsToClose = tabs.filter(t => ids.includes(t.id));
+        if (tabsToClose.length === 0) return;
 
+        const lang = (settings.language as Language) || 'en';
+        const locale = locales[lang] ?? locales.en;
 
-            if (next.length > 0) {
-                setActiveTabId(next[Math.min(idx, next.length - 1)].id);
+        const finalIdsToClose: number[] = [];
+        for (const tab of tabsToClose) {
+            if (tab.dirty) {
+                if (confirm(locale.tabs.unsavedConfirm(tab.name))) {
+                    finalIdsToClose.push(tab.id);
+                }
+            } else {
+                finalIdsToClose.push(tab.id);
+            }
+        }
+
+        if (finalIdsToClose.length === 0) return;
+
+        // 2. Update active tab if it's being closed
+        if (activeTabId && finalIdsToClose.includes(activeTabId)) {
+            const remaining = tabs.filter(t => !finalIdsToClose.includes(t.id));
+            if (remaining.length > 0) {
+                const idx = tabs.findIndex(t => t.id === activeTabId);
+                // Find next best tab
+                let nextIdx = Math.min(idx, remaining.length - 1);
+                if (nextIdx < 0) nextIdx = 0;
+                setActiveTabId(remaining[nextIdx].id);
             } else {
                 setActiveTabId(null);
             }
-            return next;
-        });
-    }, [settings.language]);
+        }
+
+        // 3. Update tabs state
+        // Disposal is now handled lazily by the useEffect above
+        setTabs(prev => prev.filter(t => !finalIdsToClose.includes(t.id)));
+    }, [tabs, activeTabId, setActiveTabId, settings.language]);
+
+    const closeTab = useCallback((id: number) => {
+        closeTabs([id]);
+    }, [closeTabs]);
+
+    const closeAllTabs = useCallback(() => {
+        closeTabs(tabs.map(t => t.id));
+    }, [tabs, closeTabs]);
 
     const updateTab = useCallback((id: number, changes: Partial<TabState>) => {
         setTabs((prev) => prev.map((t) => (t.id === id ? { ...t, ...changes } : t)));
@@ -307,6 +431,8 @@ export function EditorProvider({ children }: { children: React.ReactNode }) {
         setActiveTabId: handleSetActiveTabId,
         createTab,
         closeTab,
+        closeTabs,
+        closeAllTabs,
         updateTab,
         renameTab,
         saveViewState,
@@ -335,7 +461,8 @@ export function EditorProvider({ children }: { children: React.ReactNode }) {
         setServerRunning,
         tabCounterRef,
         isProgrammaticUpdate,
-        shouldPreventFocus
+        shouldPreventFocus,
+        activeTabIdRef
     };
 
     return <EditorContext.Provider value={value}>{children}</EditorContext.Provider>;

@@ -7,11 +7,15 @@ export default function WelcomeScreen() {
     const { newFile, openFile, openFolder } = useFileOperations();
     const { t } = useLanguage();
 
-    // Replace {ctrl_n}, {ctrl_o}, {f5} placeholders with <kbd> elements
+    const KBD_TOKENS = ['Ctrl+N', 'Ctrl+O', 'F5', 'Ctrl+G', 'Ctrl+H'];
+
+    // Replace all known placeholders with distinctive markers, then split
     const tipParts = t.welcome.tip
         .replace('{ctrl_n}', '||Ctrl+N||')
         .replace('{ctrl_o}', '||Ctrl+O||')
         .replace('{f5}', '||F5||')
+        .replace('{ctrl_g}', '||Ctrl+G||')
+        .replace('{ctrl_h}', '||Ctrl+H||')
         .split('||');
 
     return (
@@ -45,7 +49,7 @@ export default function WelcomeScreen() {
             </div>
             <p className="welcome-tip">
                 {tipParts.map((part, i) =>
-                    ['Ctrl+N', 'Ctrl+O', 'F5'].includes(part)
+                    KBD_TOKENS.includes(part)
                         ? <kbd key={i}>{part}</kbd>
                         : <span key={i}>{part}</span>
                 )}

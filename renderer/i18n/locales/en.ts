@@ -57,6 +57,7 @@ export interface Locale {
         noFileOpen: string;
         line: string;
         col: string;
+        lines: string;
     };
 
     explorer: {
@@ -89,9 +90,16 @@ export interface Locale {
         title: string;
         compiler: string;
         compilerPath: string;
+        includePaths: string;
+        addPath: string;
+        remove: string;
         browse: string;
         editor: string;
         fontSize: string;
+        minimap: string;
+        wordWrap: string;
+        autoSave: string;
+        autoSaveDelay: string;
         integration: string;
         discordRPC: string;
         language: string;
@@ -99,6 +107,7 @@ export interface Locale {
         saveChanges: string;
         savedSuccess: string;
         selectCompiler: string;
+        selectFolder: string;
         executables: string;
     };
 
@@ -151,6 +160,8 @@ export interface Locale {
         errorCreatingFile: (err: string) => string;
         errorCreatingFolder: (err: string) => string;
         errorDeleting: (err: string) => string;
+        fileTooLarge: string;
+        fileIsBinary: string;
     };
 
     sidebar: {
@@ -164,7 +175,48 @@ export interface Locale {
         refresh: string;
         closeFolder: string;
     };
-}
+
+    sourceControl: {
+        title: string;
+        noFolderOpen: string;
+        notGitRepo: string;
+        initRepo: string;
+        stagedChanges: string;
+        changes: string;
+        untrackedFiles: string;
+        commits: string;
+        noChanges: string;
+        noCommitsYet: string;
+        commitPlaceholder: string;
+        commit: string;
+        pull: string;
+        push: string;
+        stageAll: string;
+        stash: string;
+        stashPop: string;
+        refresh: string;
+        unstageAll: string;
+        stageAllChanges: string;
+        stageAllUntracked: string;
+        openChanges: string;
+        openFile: string;
+        openFileHead: string;
+        discardChanges: string;
+        stageChanges: string;
+        unstageChanges: string;
+        addToGitignore: string;
+        revealInFileExplorer: string;
+        revealInExplorerView: string;
+        pulling: string;
+        pushing: string;
+        outgoing: string;
+        incoming: string;
+        commitDetails: string;
+        couldNotLoad: string;
+        pushPending: string;
+        pullPending: string;
+    };
+};
 
 const en: Locale = {
     menu: {
@@ -211,7 +263,7 @@ const en: Locale = {
         newFile: 'New File',
         openFile: 'Open File',
         openFolder: 'Open Folder',
-        tip: 'Press {ctrl_n} for new file, {ctrl_o} to open, {f5} to compile',
+        tip: 'Press {ctrl_n} for new file, {ctrl_o} to open, {f5} to compile, {ctrl_g} to go to line, {ctrl_h} to find & replace',
     },
 
     output: {
@@ -226,6 +278,7 @@ const en: Locale = {
         noFileOpen: 'No file open',
         line: 'Ln',
         col: 'Col',
+        lines: 'lines',
     },
 
     explorer: {
@@ -258,9 +311,16 @@ const en: Locale = {
         title: 'Preferences',
         compiler: 'Compiler',
         compilerPath: 'Compiler Path (pawncc.exe)',
+        includePaths: 'Include Paths',
+        addPath: '+ Add Path',
+        remove: 'Remove',
         browse: 'Browse',
         editor: 'Editor',
         fontSize: 'Font Size',
+        minimap: 'Show Minimap',
+        wordWrap: 'Word Wrap',
+        autoSave: 'Auto Save',
+        autoSaveDelay: 'Auto Save Delay (ms)',
         integration: 'Integration',
         discordRPC: 'Discord Rich Presence',
         language: 'Language',
@@ -268,6 +328,7 @@ const en: Locale = {
         saveChanges: 'Save Changes',
         savedSuccess: 'Settings saved successfully.',
         selectCompiler: 'Select Compiler',
+        selectFolder: 'Select Include Folder',
         executables: 'Executables',
     },
 
@@ -320,6 +381,8 @@ const en: Locale = {
         errorCreatingFile: (err: string) => `Error creating file: ${err}`,
         errorCreatingFolder: (err: string) => `Error creating folder: ${err}`,
         errorDeleting: (err: string) => `Error deleting: ${err}`,
+        fileTooLarge: 'File is too large to open (Max 5MB).',
+        fileIsBinary: 'Binary files cannot be opened in the editor.',
     },
 
     sidebar: {
@@ -332,6 +395,47 @@ const en: Locale = {
         newFolder: 'New Folder',
         refresh: 'Refresh',
         closeFolder: 'Close Folder',
+    },
+
+    sourceControl: {
+        title: 'SOURCE CONTROL',
+        noFolderOpen: 'No folder open.',
+        notGitRepo: 'The current folder is not a Git repository.',
+        initRepo: 'Initialize Repository',
+        stagedChanges: 'Staged Changes',
+        changes: 'Changes',
+        untrackedFiles: 'Untracked Files',
+        commits: 'Commits',
+        noChanges: 'No changes',
+        noCommitsYet: 'No commits yet.',
+        commitPlaceholder: 'Message (Ctrl+Enter to commit)',
+        commit: 'Commit',
+        pull: 'Pull',
+        push: 'Push',
+        stageAll: 'Stage All Changes',
+        stash: 'Stash',
+        stashPop: 'Stash Pop',
+        refresh: 'Refresh',
+        unstageAll: 'Unstage All',
+        stageAllChanges: 'Stage All Changes',
+        stageAllUntracked: 'Stage All Untracked',
+        openChanges: 'Open Changes',
+        openFile: 'Open File',
+        openFileHead: 'Open File (HEAD)',
+        discardChanges: 'Discard Changes',
+        stageChanges: 'Stage Changes',
+        unstageChanges: 'Unstage Changes',
+        addToGitignore: 'Add to .gitignore',
+        revealInFileExplorer: 'Reveal in File Explorer',
+        revealInExplorerView: 'Reveal in Explorer View',
+        pulling: 'Pulling...',
+        pushing: 'Pushing...',
+        outgoing: 'Outgoing',
+        incoming: 'Incoming',
+        commitDetails: 'Commit Details',
+        couldNotLoad: 'Could not load details.',
+        pushPending: 'Push pending',
+        pullPending: 'Pull pending',
     },
 };
 

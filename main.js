@@ -3,8 +3,11 @@ const { autoUpdater } = require('electron-updater');
 const path = require('path');
 const fs = require('fs');
 const iconv = require('iconv-lite');
-const { spawn } = require('child_process');
+const { spawn, exec } = require('child_process');
 const DiscordRPC = require('discord-rpc');
+const https = require('https');
+const os = require('os');
+const AdmZip = require('adm-zip');
 
 // Single Instance Lock
 const gotTheLock = app.requestSingleInstanceLock();
@@ -67,7 +70,7 @@ let rpcEnabled = true;
 
 let rpcReconnectTimer = null;
 
-function initDiscordRPC() {
+function initDiscordRPC(suppressLogs = false) {
     if (rpc || !rpcEnabled) return;
 
     try {
@@ -85,27 +88,53 @@ function initDiscordRPC() {
         });
 
         rpc.on('error', () => {
-            console.log('[RPC] Discord RPC error, will retry...');
-            rpc = null;
+            if (!suppressLogs) console.log('[RPC] Discord RPC error.');
+            cleanupRPC();
         });
 
         rpc.login({ clientId }).catch(() => {
-            console.log('[RPC] Discord RPC login failed, will retry...');
-            rpc = null;
+            if (!suppressLogs) console.log('[RPC] Discord RPC login failed.');
+            cleanupRPC();
         });
     } catch (err) {
+        cleanupRPC();
+    }
+}
+
+function cleanupRPC() {
+    if (rpc) {
+        try {
+            // Remove listeners before destroying to prevent internal 'write' attempts
+            rpc.removeAllListeners('ready');
+            rpc.removeAllListeners('error');
+
+            // Safer cleanup to avoid "read property of null" in discord-rpc internals
+            if (rpc.transport && rpc.transport.socket) {
+                rpc.destroy().catch(() => { });
+            }
+        } catch (e) { }
         rpc = null;
     }
 }
+
+// Global stability against library-level unhandled rejections (Discord RPC)
+process.on('unhandledRejection', (reason, promise) => {
+    // Silently consume to prevent process crash
+});
+
+process.on('uncaughtException', (err) => {
+    // If it's rpc-related, ignore it, otherwise log
+    if (err.message && err.message.includes('discord-rpc')) return;
+    console.error('[CRASH] Uncaught Exception:', err);
+});
 
 function startRpcReconnectLoop() {
     if (rpcReconnectTimer) return;
     rpcReconnectTimer = setInterval(() => {
         if (rpcEnabled && !rpc) {
-            console.log('[RPC] Attempting reconnect...');
-            initDiscordRPC();
+            initDiscordRPC(true); // Suppress logs during background retry
         }
-    }, 30000); // retry every 30 seconds
+    }, 60000); // retry every 60 seconds
 }
 
 function updateDiscordPresence(details) {
@@ -137,7 +166,7 @@ function saveSettings() {
     try {
         if (settingsFile) {
             fs.writeFileSync(settingsFile, JSON.stringify(settingsData, null, 2));
-            console.log('Settings saved to:', settingsFile);
+            // Log removed to reduce terminal noise
         }
     } catch (e) {
         console.error('FAILED to save settings:', e);
@@ -248,7 +277,7 @@ app.whenReady().then(() => {
     Menu.setApplicationMenu(null);
 
     if (rpcEnabled) {
-        setTimeout(initDiscordRPC, 2000);
+        setTimeout(() => initDiscordRPC(true), 2000); // Suppress log on launch
         startRpcReconnectLoop();
     }
 });
@@ -274,6 +303,18 @@ ipcMain.on('window-close', () => {
     if (mainWindow) mainWindow.close();
 });
 
+function isBinaryBuffer(buffer) {
+    // Check for null bytes in the first 8KB to identify binary files
+    const limit = Math.min(buffer.length, 8192);
+    for (let i = 0; i < limit; i++) {
+        if (buffer[i] === 0) return true;
+    }
+    return false;
+}
+
+const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
+
+
 
 ipcMain.handle('dialog-open-file', async (event, encoding = 'utf-8') => {
     const result = await dialog.showOpenDialog(mainWindow, {
@@ -287,7 +328,18 @@ ipcMain.handle('dialog-open-file', async (event, encoding = 'utf-8') => {
     if (result.canceled) return null;
     const files = [];
     for (const filePath of result.filePaths) {
+        const stats = fs.statSync(filePath);
+        if (stats.size > MAX_FILE_SIZE) {
+            files.push({ path: filePath, error: 'FILE_TOO_LARGE' });
+            continue;
+        }
+
         const buffer = fs.readFileSync(filePath);
+        if (isBinaryBuffer(buffer)) {
+            files.push({ path: filePath, error: 'FILE_IS_BINARY' });
+            continue;
+        }
+
         const content = decodeBuffer(buffer, encoding);
         files.push({ path: filePath, content });
     }
@@ -312,6 +364,7 @@ function decodeBuffer(buffer, requestedEncoding) {
 }
 
 ipcMain.handle('dialog-save-file', async (event, { filePath, content, encoding = 'utf-8' }) => {
+    console.log(`[IPC] dialog-save-file called. filePath: ${filePath}, content length: ${content?.length}, encoding: ${encoding}`);
     let savePath = filePath;
     if (!savePath) {
         const result = await dialog.showSaveDialog(mainWindow, {
@@ -322,17 +375,31 @@ ipcMain.handle('dialog-save-file', async (event, { filePath, content, encoding =
                 { name: 'All Files', extensions: ['*'] }
             ]
         });
-        if (result.canceled) return null;
+        if (result.canceled) {
+            console.log('[IPC] Save dialog cancelled.');
+            return null;
+        }
         savePath = result.filePath;
     }
-    const buffer = (encoding === 'utf-8') ? Buffer.from(content, 'utf-8') : iconv.encode(content, encoding);
+    console.log(`[IPC] Writing to file: ${savePath}`);
+    const safeContent = content ?? '';
+    const buffer = (encoding === 'utf-8') ? Buffer.from(safeContent, 'utf-8') : iconv.encode(safeContent, encoding);
     fs.writeFileSync(savePath, buffer);
     return savePath;
 });
 
 ipcMain.handle('read-file', async (event, filePath, encoding = 'utf-8') => {
     try {
+        const stats = fs.statSync(filePath);
+        if (stats.size > MAX_FILE_SIZE) {
+            return { content: null, error: 'FILE_TOO_LARGE' };
+        }
+
         const buffer = fs.readFileSync(filePath);
+        if (isBinaryBuffer(buffer)) {
+            return { content: null, error: 'FILE_IS_BINARY' };
+        }
+
         const content = decodeBuffer(buffer, encoding);
         return { content, error: null };
     } catch (e) {
@@ -585,11 +652,7 @@ ipcMain.on('rpc-toggle', (event, enabled) => {
     if (rpcEnabled) {
         if (!rpc) initDiscordRPC();
     } else {
-        if (rpc) {
-            rpc.clearActivity();
-            rpc.destroy();
-            rpc = null;
-        }
+        cleanupRPC();
     }
 });
 
@@ -818,6 +881,286 @@ ipcMain.handle('write-config-file', async (event, { filePath, data, type }) => {
         return { success: false, error: err.message };
     }
 });
+
+
+// ─────────────────────────────────────────────────────────────────────────────
+
+// ─── GIT IPC HANDLERS ────────────────────────────────────────────────────────
+
+function runGit(args, cwd) {
+    return new Promise((resolve) => {
+        // Use spawn with args array to avoid Windows shell quoting issues
+        const argsArr = typeof args === 'string'
+            ? args.match(/(?:[^\s"]+|"[^"]*")+/g).map(a => a.replace(/^"|"$/g, ''))
+            : args;
+
+        const proc = spawn('git', argsArr, {
+            cwd,
+            windowsHide: true,
+            env: { ...process.env }
+        });
+
+        let stdout = '';
+        let stderr = '';
+        proc.stdout.on('data', d => { stdout += d.toString(); });
+        proc.stderr.on('data', d => { stderr += d.toString(); });
+
+        proc.on('close', (code) => {
+            const success = code === 0;
+            const combined = (stdout + stderr).trim();
+            resolve({
+                success,
+                stdout: stdout.trim(),
+                stderr: stderr.trim(),
+                error: success ? null : (combined || `git exited with code ${code}`)
+            });
+        });
+
+        proc.on('error', (err) => {
+            resolve({ success: false, stdout: '', stderr: '', error: err.message });
+        });
+    });
+}
+
+// Commit: always pass message as a separate arg (immunises against any shell quoting)
+function runGitCommit(cwd, msg) {
+    return new Promise((resolve) => {
+        const proc = spawn('git', ['commit', '-m', msg], {
+            cwd,
+            windowsHide: true,
+            env: { ...process.env }
+        });
+
+        let stdout = '';
+        let stderr = '';
+        proc.stdout.on('data', d => { stdout += d.toString(); });
+        proc.stderr.on('data', d => { stderr += d.toString(); });
+
+        proc.on('close', (code) => {
+            const success = code === 0;
+            const combined = (stdout + stderr).trim();
+            resolve({
+                success,
+                stdout: stdout.trim(),
+                stderr: stderr.trim(),
+                error: success ? null : (combined || `git commit exited with code ${code}`)
+            });
+        });
+
+        proc.on('error', (err) => {
+            resolve({ success: false, stdout: '', stderr: '', error: err.message });
+        });
+    });
+}
+
+ipcMain.handle('git-status', async (event, cwd) => {
+    if (!cwd) return { success: false, error: 'No folder open.' };
+    const res = await runGit(['status', '--porcelain', '-u', '--no-renames'], cwd);
+    if (!res.success && (res.stderr + res.stdout).includes('not a git repository')) {
+        return { success: false, notGitRepo: true };
+    }
+    if (!res.success) return { success: false, error: res.error };
+
+    const staged = [];
+    const unstaged = [];
+    const untracked = [];
+
+    // Split on newlines, strip carriage returns (Windows CRLF), skip empty lines
+    res.stdout.split('\n').forEach(rawLine => {
+        const line = rawLine.replace(/\r/g, '');
+        if (line.length < 4) return; // need at least XY + space + 1 char
+
+        const x = line[0]; // index/staged status
+        const y = line[1]; // working-tree status
+        // column 2 is always a space separator; filename starts at 3
+        const file = line.slice(3).trim();
+        if (!file) return;
+
+        if (x === '?' && y === '?') {
+            untracked.push({ file, status: '?' });
+        } else {
+            if (x !== ' ' && x !== '?') staged.push({ file, status: x });
+            if (y !== ' ' && y !== '?') unstaged.push({ file, status: y });
+        }
+    });
+
+    return { success: true, staged, unstaged, untracked };
+});
+
+
+ipcMain.handle('git-init', async (event, cwd) => {
+    const res = await runGit('init', cwd);
+    return { success: res.success, output: res.stdout || res.stderr, error: res.error };
+});
+
+ipcMain.handle('git-add', async (event, { cwd, file }) => {
+    const target = file === 'ALL' ? '-A' : `"${file}"`;
+    const res = await runGit(`add ${target}`, cwd);
+    return { success: res.success, error: res.error };
+});
+
+ipcMain.handle('git-unstage', async (event, { cwd, file }) => {
+    const res = await runGit(`restore --staged "${file}"`, cwd);
+    return { success: res.success, error: res.error };
+});
+
+ipcMain.handle('git-commit', async (event, { cwd, msg }) => {
+    const res = await runGitCommit(cwd, msg);
+    return { success: res.success, output: res.stdout || res.stderr, error: res.error };
+});
+
+ipcMain.handle('git-discard', async (event, { cwd, file }) => {
+    // For untracked files, delete them; for tracked, checkout
+    const res = await runGit(`checkout -- "${file}"`, cwd);
+    return { success: res.success, error: res.error };
+});
+
+ipcMain.handle('git-pull', async (event, cwd) => {
+    const res = await runGit('pull', cwd);
+    return { success: res.success, output: res.stdout || res.stderr, error: res.error };
+});
+
+ipcMain.handle('git-push', async (event, cwd) => {
+    const res = await runGit('push', cwd);
+    return { success: res.success, output: res.stdout || res.stderr, error: res.error };
+});
+
+ipcMain.handle('git-get-branch', async (event, cwd) => {
+    if (!cwd) return { branch: null };
+    const res = await runGit('rev-parse --abbrev-ref HEAD', cwd);
+    if (!res.success) return { branch: null };
+    return { branch: res.stdout };
+});
+
+ipcMain.handle('git-get-diff', async (event, { cwd, file, staged, commitHash }) => {
+    if (commitHash) {
+        const res = await runGit(['diff', `${commitHash}^!`, '--', file], cwd);
+        return { success: res.success, diff: res.stdout, error: res.error };
+    }
+    const flag = staged ? '--cached' : '';
+    const res = await runGit(`diff ${flag} "${file}"`, cwd);
+    return { success: res.success, diff: res.stdout, error: res.error };
+});
+
+ipcMain.handle('git-get-log', async (event, cwd) => {
+    if (!cwd) return { success: false, commits: [] };
+    const res = await runGit(['log', '--oneline', '-50'], cwd);
+    if (!res.success) return { success: false, commits: [] };
+    const commits = res.stdout.split('\n').filter(Boolean).map(line => {
+        const spaceIdx = line.indexOf(' ');
+        if (spaceIdx === -1) return null;
+        return { hash: line.slice(0, spaceIdx), message: line.slice(spaceIdx + 1) };
+    }).filter(Boolean);
+    return { success: true, commits };
+});
+
+ipcMain.handle('git-show-commit', async (event, { cwd, hash }) => {
+    if (!cwd || !hash) return { success: false, error: 'No cwd or hash provided' };
+
+    // Get stats (files changed etc)
+    const statRes = await runGit(['show', '--name-status', '--oneline', hash], cwd);
+    if (!statRes.success) return { success: false, error: statRes.error };
+
+    // Parse the output:
+    // First line is hash + msg. Following lines are 'M    file.html' or 'A    file.js'
+    const lines = statRes.stdout.split('\n').map(l => l.replace(/\r/g, '').trim()).filter(Boolean);
+    if (lines.length === 0) return { success: false, error: 'Empty output' };
+
+    const commitLine = lines.shift(); // The hash + msg line
+
+    const files = lines.map(l => {
+        const parts = l.split(/\s+/);
+        if (parts.length >= 2) {
+            return { status: parts[0], path: parts.slice(1).join(' ') };
+        }
+        return null;
+    }).filter(Boolean);
+
+    return { success: true, commitLine, files };
+});
+
+ipcMain.handle('git-get-sync-status', async (event, cwd) => {
+    if (!cwd) return { success: false, incoming: 0, outgoing: 0, incomingCommits: [], outgoingCommits: [] };
+
+    // Fetch remote branch data without pulling
+    await runGit(['fetch'], cwd);
+
+    // Parse helper
+    const parseLog = (stdout) => stdout.split('\n')
+        .map(l => l.replace(/\r/g, '').trim())
+        .filter(Boolean)
+        .map(line => {
+            const sep = line.indexOf(' ');
+            if (sep === -1) return null;
+            return { hash: line.slice(0, sep), message: line.slice(sep + 1) };
+        }).filter(Boolean);
+
+    // Outgoing commits (local, not yet pushed)
+    const outRes = await runGit(['log', '--oneline', '@{u}..HEAD'], cwd);
+    const outgoingCommits = outRes.success ? parseLog(outRes.stdout) : [];
+
+    // Incoming commits (remote, not yet pulled)
+    const inRes = await runGit(['log', '--oneline', 'HEAD..@{u}'], cwd);
+    const incomingCommits = inRes.success ? parseLog(inRes.stdout) : [];
+
+    return {
+        success: true,
+        incoming: incomingCommits.length,
+        outgoing: outgoingCommits.length,
+        incomingCommits,
+        outgoingCommits
+    };
+});
+
+ipcMain.handle('git-stash', async (event, cwd) => {
+    const res = await runGit('stash', cwd);
+    return { success: res.success, output: res.stdout || res.stderr, error: res.error };
+});
+
+ipcMain.handle('git-stash-pop', async (event, cwd) => {
+    const res = await runGit('stash pop', cwd);
+    return { success: res.success, output: res.stdout || res.stderr, error: res.error };
+});
+
+ipcMain.handle('git-add-gitignore', async (event, { cwd, file }) => {
+    try {
+        const giPath = path.join(cwd, '.gitignore');
+        let content = '';
+        if (fs.existsSync(giPath)) content = fs.readFileSync(giPath, 'utf8');
+        const lines = content.split('\n').map(l => l.trim()).filter(Boolean);
+        const entry = file.replace(/\\/g, '/');
+        if (!lines.includes(entry)) {
+            content = content.endsWith('\n') ? content : content + '\n';
+            fs.writeFileSync(giPath, content + entry + '\n', 'utf8');
+        }
+        return { success: true };
+    } catch (err) {
+        return { success: false, error: err.message };
+    }
+});
+
+ipcMain.handle('git-open-file-head', async (event, { cwd, file }) => {
+    try {
+        const res = await runGit(`show HEAD:"${file.replace(/\\/g, '/')}"`, cwd);
+        if (!res.success) return { success: false, error: res.error };
+        return { success: true, content: res.stdout };
+    } catch (err) {
+        return { success: false, error: err.message };
+    }
+});
+
+ipcMain.handle('reveal-in-explorer', async (event, filePath) => {
+    try {
+        // Open the parent folder
+        const dir = path.dirname(filePath);
+        await shell.openPath(dir);
+        return { success: true };
+    } catch (err) {
+        return { success: false, error: err.message };
+    }
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
 
 
 app.on('before-quit', () => {

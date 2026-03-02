@@ -74,6 +74,27 @@ contextBridge.exposeInMainWorld('api', {
         const wrappedCb = (e, filePath) => cb(filePath);
         ipcRenderer.on('open-external-file', wrappedCb);
         return () => ipcRenderer.removeListener('open-external-file', wrappedCb);
-    }
+    },
+
+    // ─── Git ────────────────────────────────────────────────────────────────
+    gitStatus: (cwd) => ipcRenderer.invoke('git-status', cwd),
+    gitInit: (cwd) => ipcRenderer.invoke('git-init', cwd),
+    gitAdd: (cwd, file) => ipcRenderer.invoke('git-add', { cwd, file }),
+    gitUnstage: (cwd, file) => ipcRenderer.invoke('git-unstage', { cwd, file }),
+    gitCommit: (cwd, msg) => ipcRenderer.invoke('git-commit', { cwd, msg }),
+    gitDiscard: (cwd, file) => ipcRenderer.invoke('git-discard', { cwd, file }),
+    gitPull: (cwd) => ipcRenderer.invoke('git-pull', cwd),
+    gitPush: (cwd) => ipcRenderer.invoke('git-push', cwd),
+    gitGetBranch: (cwd) => ipcRenderer.invoke('git-get-branch', cwd),
+    gitGetDiff: (cwd, file, staged, commitHash) => ipcRenderer.invoke('git-get-diff', { cwd, file, staged, commitHash }),
+    gitGetLog: (cwd) => ipcRenderer.invoke('git-get-log', cwd),
+    gitShowCommit: (cwd, hash) => ipcRenderer.invoke('git-show-commit', { cwd, hash }),
+    gitStash: (cwd) => ipcRenderer.invoke('git-stash', cwd),
+    gitStashPop: (cwd) => ipcRenderer.invoke('git-stash-pop', cwd),
+    gitGetSyncStatus: (cwd) => ipcRenderer.invoke('git-get-sync-status', cwd),
+    gitAddGitignore: (cwd, file) => ipcRenderer.invoke('git-add-gitignore', { cwd, file }),
+    gitOpenFileHead: (cwd, file) => ipcRenderer.invoke('git-open-file-head', { cwd, file }),
+    revealInExplorer: (filePath) => ipcRenderer.invoke('reveal-in-explorer', filePath),
+
 });
 

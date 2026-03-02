@@ -2,30 +2,34 @@
 
 import { useEditorContext } from '../context/EditorContext';
 import { useCallback } from 'react';
+import { useLanguage } from '../i18n/LanguageContext';
 
 export function useFileOperations() {
+    const { t } = useLanguage();
     const {
         createTab, setCurrentFolderPath, currentEncoding, tabs, setActiveTabId, appendOutput,
         setDetectedServerPath, setDetectedServerType, setDetectedConfigPath, setSettings
     } = useEditorContext();
 
     const openFileByPath = useCallback(async (path: string) => {
-        
-        const existing = tabs.find(t => t.path === path);
-        if (existing) {
-            setActiveTabId(existing.id);
-            return;
-        }
+        if (!window.api) return;
 
         const { content, error } = await window.api.readFile(path, currentEncoding);
         if (error) {
-            appendOutput(`Error reading file: ${error}`, 'error');
+            let msg = `Error reading file: ${error}`;
+            if (error === 'FILE_TOO_LARGE') msg = t.output_msgs.fileTooLarge;
+            else if (error === 'FILE_IS_BINARY') msg = t.output_msgs.fileIsBinary;
+
+            appendOutput(msg, 'error');
             return;
         }
 
         const name = path.split(/[\\/]/).pop() || 'untitled';
-        createTab(name, path, content || '');
-    }, [tabs, setActiveTabId, currentEncoding, appendOutput, createTab]);
+        const tab = createTab(name, path, content || '');
+        if (!tab) {
+            appendOutput(`Failed to open file: editor not ready yet. Please try again.`, 'error');
+        }
+    }, [currentEncoding, appendOutput, createTab, t]);
 
     const newFile = useCallback(() => {
         createTab(`script_${tabs.length + 1}.pwn`, null, '');
@@ -35,10 +39,17 @@ export function useFileOperations() {
         const results = await window.api.openFile(currentEncoding);
         if (results) {
             for (const res of results) {
+                if (res.error) {
+                    let msg = `Error opening ${res.path}: ${res.error}`;
+                    if (res.error === 'FILE_TOO_LARGE') msg = `${t.output_msgs.fileTooLarge} (${res.path})`;
+                    else if (res.error === 'FILE_IS_BINARY') msg = `${t.output_msgs.fileIsBinary} (${res.path})`;
+                    appendOutput(msg, 'error');
+                    continue;
+                }
                 await openFileByPath(res.path);
             }
         }
-    }, [currentEncoding, openFileByPath]);
+    }, [currentEncoding, openFileByPath, t, appendOutput]);
 
     const openFolder = useCallback(async () => {
         const folderPath = await window.api.openFolderDialog();
@@ -46,7 +57,7 @@ export function useFileOperations() {
             setCurrentFolderPath(folderPath);
             appendOutput(`Opened folder: ${folderPath}`, 'info');
 
-            
+
             window.api.detectServer(folderPath).then(res => {
                 if (res) {
                     setDetectedServerPath(res.path);
@@ -76,8 +87,8 @@ export function useFileOperations() {
     }, [setCurrentFolderPath]);
 
     const saveFile = useCallback(async (isSaveAs = false) => {
-        
-        
+
+
         document.dispatchEvent(new CustomEvent('dawno:save-request', { detail: { isSaveAs } }));
     }, []);
 
