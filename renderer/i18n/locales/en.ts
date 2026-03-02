@@ -205,6 +205,7 @@ export interface Locale {
         stageChanges: string;
         unstageChanges: string;
         addToGitignore: string;
+        removeFromGitignore: string;
         revealInFileExplorer: string;
         revealInExplorerView: string;
         pulling: string;
@@ -426,6 +427,7 @@ const en: Locale = {
         stageChanges: 'Stage Changes',
         unstageChanges: 'Unstage Changes',
         addToGitignore: 'Add to .gitignore',
+        removeFromGitignore: 'Remove from .gitignore',
         revealInFileExplorer: 'Reveal in File Explorer',
         revealInExplorerView: 'Reveal in Explorer View',
         pulling: 'Pulling...',

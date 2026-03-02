@@ -93,6 +93,7 @@ contextBridge.exposeInMainWorld('api', {
     gitStashPop: (cwd) => ipcRenderer.invoke('git-stash-pop', cwd),
     gitGetSyncStatus: (cwd) => ipcRenderer.invoke('git-get-sync-status', cwd),
     gitAddGitignore: (cwd, file) => ipcRenderer.invoke('git-add-gitignore', { cwd, file }),
+    gitRemoveGitignore: (cwd, file) => ipcRenderer.invoke('git-remove-gitignore', { cwd, file }),
     gitOpenFileHead: (cwd, file) => ipcRenderer.invoke('git-open-file-head', { cwd, file }),
     revealInExplorer: (filePath) => ipcRenderer.invoke('reveal-in-explorer', filePath),
 

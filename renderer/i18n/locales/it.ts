@@ -76,7 +76,7 @@ const it: Locale = {
         stageAllUntracked: 'Prepara non tracciati', openChanges: 'Apri modifiche',
         openFile: 'Apri file', openFileHead: 'Apri file (HEAD)', discardChanges: 'Annulla modifiche',
         stageChanges: 'Prepara modifiche', unstageChanges: 'Rimuovi preparazione',
-        addToGitignore: 'Aggiungi a .gitignore', revealInFileExplorer: "Mostra nell'esploratore",
+        addToGitignore: 'Aggiungi a .gitignore', removeFromGitignore: 'Rimuovi da .gitignore', revealInFileExplorer: "Mostra nell'esploratore",
         revealInExplorerView: "Mostra nella vista dell'esploratore", pulling: 'Recupero...', pushing: 'Invio...',
         outgoing: 'In uscita', incoming: 'In arrivo', commitDetails: 'Dettagli commit',
         couldNotLoad: 'Impossibile caricare i dettagli.', pushPending: 'Push in attesa', pullPending: 'Pull in attesa',

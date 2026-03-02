@@ -75,7 +75,7 @@ const es: Locale = {
         refresh: 'Actualizar', unstageAll: 'Desprepara todo', stageAllChanges: 'Preparar todos los cambios',
         stageAllUntracked: 'Preparar sin seguimiento', openChanges: 'Abrir cambios', openFile: 'Abrir archivo',
         openFileHead: 'Abrir archivo (HEAD)', discardChanges: 'Descartar cambios', stageChanges: 'Preparar cambios',
-        unstageChanges: 'Desprepara cambios', addToGitignore: 'Añadir a .gitignore',
+        unstageChanges: 'Desprepara cambios', addToGitignore: 'Añadir a .gitignore', removeFromGitignore: 'Eliminar de .gitignore',
         revealInFileExplorer: 'Mostrar en explorador', revealInExplorerView: 'Mostrar en vista del explorador',
         pulling: 'Obteniendo...', pushing: 'Enviando...',
         outgoing: 'Salientes', incoming: 'Entrantes', commitDetails: 'Detalles del commit',

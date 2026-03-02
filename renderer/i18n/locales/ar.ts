@@ -76,7 +76,7 @@ const ar: Locale = {
         stageAllUntracked: 'تنظيم غير المتتبَّعة', openChanges: 'فتح التغييرات',
         openFile: 'فتح الملف', openFileHead: 'فتح الملف (HEAD)', discardChanges: 'تجاهل التغييرات',
         stageChanges: 'تنظيم التغييرات', unstageChanges: 'إلغاء التنظيم',
-        addToGitignore: 'إضافة إلى .gitignore', revealInFileExplorer: 'إظهار في المستكشف',
+        addToGitignore: 'إضافة إلى .gitignore', removeFromGitignore: 'إزالة من .gitignore', revealInFileExplorer: 'إظهار في المستكشف',
         revealInExplorerView: 'إظهار في عرض المستكشف', pulling: 'جارٍ السحب...', pushing: 'جارٍ الدفع...',
         outgoing: 'صادر', incoming: 'وارد', commitDetails: 'تفاصيل الالتزام',
         couldNotLoad: 'تعذّر تحميل التفاصيل.', pushPending: 'في انتظار الدفع', pullPending: 'في انتظار السحب',

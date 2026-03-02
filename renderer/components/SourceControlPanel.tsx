@@ -15,6 +15,7 @@ interface GitStatus {
     staged: GitFile[];
     unstaged: GitFile[];
     untracked: GitFile[];
+    ignoredFiles: string[];
 }
 
 interface DiffTarget {
@@ -62,9 +63,10 @@ interface CtxMenuProps {
     onDiff: (target: DiffTarget) => void;
     appendOutput: (text: string, type?: 'info' | 'error' | 'warning' | 'success', clickable?: boolean, filePath?: string | null) => void;
     openFileByPath: (path: string) => void;
+    isIgnored?: boolean;
 }
 
-function ScContextMenu({ x, y, item, section, cwd, onClose, onRefresh, onDiff, appendOutput, openFileByPath }: CtxMenuProps) {
+function ScContextMenu({ x, y, item, section, cwd, onClose, onRefresh, onDiff, appendOutput, openFileByPath, isIgnored }: CtxMenuProps) {
     const ref = useRef<HTMLDivElement>(null);
     const { t } = useLanguage();
 
@@ -126,6 +128,12 @@ function ScContextMenu({ x, y, item, section, cwd, onClose, onRefresh, onDiff, a
             else appendOutput(`Git: ${res.error}`, 'error');
             onRefresh(); onClose();
         },
+        removeFromGitignore: async () => {
+            const res = await window.api.gitRemoveGitignore(cwd, item.file);
+            if (res.success) appendOutput(`Removed "${item.file}" from .gitignore`, 'success');
+            else appendOutput(`Git: ${res.error}`, 'error');
+            onRefresh(); onClose();
+        },
         revealInFileExplorer: async () => {
             await window.api.revealInExplorer(fullPath);
             onClose();
@@ -154,7 +162,11 @@ function ScContextMenu({ x, y, item, section, cwd, onClose, onRefresh, onDiff, a
             {section === 'staged' && (
                 <button className="sc-ctx-item" onClick={actions.unstage}>{t.sourceControl.unstageChanges}</button>
             )}
-            <button className="sc-ctx-item" onClick={actions.addToGitignore}>{t.sourceControl.addToGitignore}</button>
+            {isIgnored ? (
+                <button className="sc-ctx-item" onClick={actions.removeFromGitignore}>{t.sourceControl.removeFromGitignore}</button>
+            ) : (
+                <button className="sc-ctx-item" onClick={actions.addToGitignore}>{t.sourceControl.addToGitignore}</button>
+            )}
             <div className="sc-ctx-sep" />
             <button className="sc-ctx-item" onClick={actions.revealInFileExplorer}>{t.sourceControl.revealInFileExplorer}</button>
             <button className="sc-ctx-item" onClick={actions.revealInExplorerView}>{t.sourceControl.revealInExplorerView}</button>
@@ -172,9 +184,10 @@ interface FileRowProps {
     onDiff: (target: DiffTarget) => void;
     appendOutput: (text: string, type?: 'info' | 'error' | 'warning' | 'success', clickable?: boolean, filePath?: string | null) => void;
     openFileByPath: (path: string) => void;
+    isIgnored?: boolean;
 }
 
-function FileRow({ item, section, cwd, onRefresh, onDiff, appendOutput, openFileByPath }: FileRowProps) {
+function FileRow({ item, section, cwd, onRefresh, onDiff, appendOutput, openFileByPath, isIgnored }: FileRowProps) {
     const [hovering, setHovering] = useState(false);
     const [ctxMenu, setCtxMenu] = useState<{ x: number; y: number } | null>(null);
 
@@ -274,6 +287,7 @@ function FileRow({ item, section, cwd, onRefresh, onDiff, appendOutput, openFile
                     onDiff={onDiff}
                     appendOutput={appendOutput}
                     openFileByPath={openFileByPath}
+                    isIgnored={isIgnored}
                 />
             )}
         </>
@@ -350,7 +364,12 @@ export default function SourceControlPanel() {
         if (res.notGitRepo) { setNotGitRepo(true); setStatus(null); return; }
         if (res.success) {
             setNotGitRepo(false);
-            setStatus(res as GitStatus);
+            setStatus({
+                staged: res.staged || [],
+                unstaged: res.unstaged || [],
+                untracked: res.untracked || [],
+                ignoredFiles: res.ignoredFiles || []
+            } as GitStatus);
         }
 
         // Always fetch the latest log so the "Commits" panel immediately reflects new commits
@@ -617,7 +636,8 @@ export default function SourceControlPanel() {
                             >
                                 {status.staged.map(f => (
                                     <FileRow key={`staged-${f.file}`} item={f} section="staged" cwd={currentFolderPath}
-                                        onRefresh={refresh} onDiff={setDiffTarget} appendOutput={appendOutput} openFileByPath={handleOpenFile} />
+                                        onRefresh={refresh} onDiff={setDiffTarget} appendOutput={appendOutput} openFileByPath={handleOpenFile}
+                                        isIgnored={status.ignoredFiles?.includes(f.file.replace(/\\/g, '/'))} />
                                 ))}
                             </Section>
                         )}
@@ -639,7 +659,8 @@ export default function SourceControlPanel() {
                             >
                                 {status.unstaged.map(f => (
                                     <FileRow key={`unstaged-${f.file}`} item={f} section="unstaged" cwd={currentFolderPath}
-                                        onRefresh={refresh} onDiff={setDiffTarget} appendOutput={appendOutput} openFileByPath={handleOpenFile} />
+                                        onRefresh={refresh} onDiff={setDiffTarget} appendOutput={appendOutput} openFileByPath={handleOpenFile}
+                                        isIgnored={status.ignoredFiles?.includes(f.file.replace(/\\/g, '/'))} />
                                 ))}
                             </Section>
                         )}
@@ -661,7 +682,8 @@ export default function SourceControlPanel() {
                             >
                                 {status.untracked.map(f => (
                                     <FileRow key={`untracked-${f.file}`} item={f} section="untracked" cwd={currentFolderPath}
-                                        onRefresh={refresh} onDiff={setDiffTarget} appendOutput={appendOutput} openFileByPath={handleOpenFile} />
+                                        onRefresh={refresh} onDiff={setDiffTarget} appendOutput={appendOutput} openFileByPath={handleOpenFile}
+                                        isIgnored={status.ignoredFiles?.includes(f.file.replace(/\\/g, '/'))} />
                                 ))}
                             </Section>
                         )}

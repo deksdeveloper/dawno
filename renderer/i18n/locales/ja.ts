@@ -76,7 +76,7 @@ const ja: Locale = {
         stageAllUntracked: '追跡されていないファイルをステージ', openChanges: '変更を開く',
         openFile: 'ファイルを開く', openFileHead: 'ファイルを開く (HEAD)', discardChanges: '変更を破棄',
         stageChanges: '変更をステージ', unstageChanges: 'ステージを解除',
-        addToGitignore: '.gitignore に追加', revealInFileExplorer: 'エクスプローラーで表示',
+        addToGitignore: '.gitignore に追加', removeFromGitignore: '.gitignore から削除', revealInFileExplorer: 'エクスプローラーで表示',
         revealInExplorerView: 'エクスプローラービューで表示', pulling: 'プル中...', pushing: 'プッシュ中...',
         outgoing: '送信中', incoming: '受信中', commitDetails: 'コミットの詳細',
         couldNotLoad: '詳細を読み込めませんでした。', pushPending: 'プッシュ待機中', pullPending: 'プル待機中',

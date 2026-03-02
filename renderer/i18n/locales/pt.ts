@@ -76,7 +76,7 @@ const pt: Locale = {
         stageAllUntracked: 'Preparar não rastreados', openChanges: 'Abrir alterações',
         openFile: 'Abrir arquivo', openFileHead: 'Abrir arquivo (HEAD)', discardChanges: 'Descartar alterações',
         stageChanges: 'Preparar alterações', unstageChanges: 'Remover preparação',
-        addToGitignore: 'Adicionar ao .gitignore', revealInFileExplorer: 'Revelar no explorador',
+        addToGitignore: 'Adicionar ao .gitignore', removeFromGitignore: 'Remover do .gitignore', revealInFileExplorer: 'Revelar no explorador',
         revealInExplorerView: 'Revelar na vista do explorador', pulling: 'Obtendo...', pushing: 'Enviando...',
         outgoing: 'Saídas', incoming: 'Entradas', commitDetails: 'Detalhes do commit',
         couldNotLoad: 'Não foi possível carregar os detalhes.', pushPending: 'Push pendente', pullPending: 'Pull pendente',

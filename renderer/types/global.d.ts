@@ -68,7 +68,7 @@ declare global {
             onOpenFile(cb: (filePath: string) => void): () => void;
 
             // Git
-            gitStatus(cwd: string): Promise<{ success: boolean; notGitRepo?: boolean; staged?: Array<{ file: string; status: string }>; unstaged?: Array<{ file: string; status: string }>; untracked?: Array<{ file: string; status: string }>; error?: string }>;
+            gitStatus(cwd: string): Promise<{ success: boolean; notGitRepo?: boolean; staged?: Array<{ file: string; status: string }>; unstaged?: Array<{ file: string; status: string }>; untracked?: Array<{ file: string; status: string }>; ignoredFiles?: string[]; error?: string }>;
             gitInit(cwd: string): Promise<{ success: boolean; output?: string; error?: string }>;
             gitAdd(cwd: string, file: string): Promise<{ success: boolean; error?: string }>;
             gitUnstage(cwd: string, file: string): Promise<{ success: boolean; error?: string }>;
@@ -84,6 +84,7 @@ declare global {
             gitStash(cwd: string): Promise<{ success: boolean; output?: string; error?: string }>;
             gitStashPop(cwd: string): Promise<{ success: boolean; output?: string; error?: string }>;
             gitAddGitignore(cwd: string, file: string): Promise<{ success: boolean; error?: string }>;
+            gitRemoveGitignore(cwd: string, file: string): Promise<{ success: boolean; error?: string }>;
             gitOpenFileHead(cwd: string, file: string): Promise<{ success: boolean; content?: string; error?: string }>;
             revealInExplorer(filePath: string): Promise<{ success: boolean; error?: string }>;
 

@@ -208,6 +208,7 @@ const de: Locale = {
         stageChanges: 'Änderungen vormerken',
         unstageChanges: 'Vormerken rückgängig machen',
         addToGitignore: 'Zu .gitignore hinzufügen',
+        removeFromGitignore: 'Aus .gitignore entfernen',
         revealInFileExplorer: 'Im Datei-Explorer anzeigen',
         revealInExplorerView: 'In der Explorer-Ansicht anzeigen',
         pulling: 'Wird abgerufen...',

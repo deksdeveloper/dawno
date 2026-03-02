@@ -208,6 +208,7 @@ const tr: Locale = {
         stageChanges: 'Değişiklikleri Hazırla',
         unstageChanges: 'Hazırlığı Geri Al',
         addToGitignore: '.gitignore\'a Ekle',
+        removeFromGitignore: '.gitignore\'dan Çıkar',
         revealInFileExplorer: 'Dosya Gezgini\'nde Göster',
         revealInExplorerView: 'Gezgin Görünümünde Göster',
         pulling: 'Çekiliyor...',

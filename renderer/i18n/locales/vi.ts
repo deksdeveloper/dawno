@@ -76,7 +76,7 @@ const vi: Locale = {
         stageAllUntracked: 'Chỉ định tệp chưa theo dõi', openChanges: 'Mở thay đổi',
         openFile: 'Mở tệp', openFileHead: 'Mở tệp (HEAD)', discardChanges: 'Hủy thay đổi',
         stageChanges: 'Chỉ định thay đổi', unstageChanges: 'Hủy chỉ định',
-        addToGitignore: 'Thêm vào .gitignore', revealInFileExplorer: 'Hiện trong trình khám phá',
+        addToGitignore: 'Thêm vào .gitignore', removeFromGitignore: 'Xóa khỏi .gitignore', revealInFileExplorer: 'Hiện trong trình khám phá',
         revealInExplorerView: 'Hiện trong chế độ xem', pulling: 'Đang kéo...', pushing: 'Đang đẩy...',
         outgoing: 'Gửi đi', incoming: 'Nhận về', commitDetails: 'Chi tiết cam kết',
         couldNotLoad: 'Không thể tải chi tiết.', pushPending: 'Chờ đẩy', pullPending: 'Chờ kéo',

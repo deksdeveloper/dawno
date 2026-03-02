@@ -76,7 +76,7 @@ const ko: Locale = {
         stageAllUntracked: '추적되지 않은 파일 스테이징', openChanges: '변경 사항 열기',
         openFile: '파일 열기', openFileHead: '파일 열기 (HEAD)', discardChanges: '변경 사항 취소',
         stageChanges: '변경 사항 스테이징', unstageChanges: '언스테이징',
-        addToGitignore: '.gitignore에 추가', revealInFileExplorer: '파일 탐색기에서 표시',
+        addToGitignore: '.gitignore에 추가', removeFromGitignore: '.gitignore에서 제거', revealInFileExplorer: '파일 탐색기에서 표시',
         revealInExplorerView: '탐색기 보기에서 표시', pulling: '풀 중...', pushing: '푸시 중...',
         outgoing: '발신', incoming: '수신', commitDetails: '커밋 세부 정보',
         couldNotLoad: '세부 정보를 로드할 수 없습니다.', pushPending: '푸시 대기 중', pullPending: '풀 대기 중',

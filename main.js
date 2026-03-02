@@ -984,7 +984,15 @@ ipcMain.handle('git-status', async (event, cwd) => {
         }
     });
 
-    return { success: true, staged, unstaged, untracked };
+    let ignoredFiles = [];
+    try {
+        const giPath = path.join(cwd, '.gitignore');
+        if (fs.existsSync(giPath)) {
+            ignoredFiles = fs.readFileSync(giPath, 'utf8').split('\n').map(l => l.trim()).filter(Boolean);
+        }
+    } catch (e) { }
+
+    return { success: true, staged, unstaged, untracked, ignoredFiles };
 });
 
 
@@ -1133,6 +1141,20 @@ ipcMain.handle('git-add-gitignore', async (event, { cwd, file }) => {
             content = content.endsWith('\n') ? content : content + '\n';
             fs.writeFileSync(giPath, content + entry + '\n', 'utf8');
         }
+        return { success: true };
+    } catch (err) {
+        return { success: false, error: err.message };
+    }
+});
+
+ipcMain.handle('git-remove-gitignore', async (event, { cwd, file }) => {
+    try {
+        const giPath = path.join(cwd, '.gitignore');
+        if (!fs.existsSync(giPath)) return { success: true };
+        const content = fs.readFileSync(giPath, 'utf8');
+        const entry = file.replace(/\\/g, '/');
+        const newLines = content.split('\n').filter(l => l.trim() !== entry);
+        fs.writeFileSync(giPath, newLines.join('\n'), 'utf8');
         return { success: true };
     } catch (err) {
         return { success: false, error: err.message };

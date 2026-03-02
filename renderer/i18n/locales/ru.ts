@@ -77,7 +77,7 @@ const ru: Locale = {
         stageAllUntracked: 'Подготовить неотслеживаемые', openChanges: 'Открыть изменения',
         openFile: 'Открыть файл', openFileHead: 'Открыть файл (HEAD)', discardChanges: 'Отменить изменения',
         stageChanges: 'Подготовить изменения', unstageChanges: 'Сбросить подготовку',
-        addToGitignore: 'Добавить в .gitignore', revealInFileExplorer: 'Показать в проводнике',
+        addToGitignore: 'Добавить в .gitignore', removeFromGitignore: 'Удалить из .gitignore', revealInFileExplorer: 'Показать в проводнике',
         revealInExplorerView: 'Показать в обозревателе', pulling: 'Получение...', pushing: 'Отправка...',
         outgoing: 'Исходящие', incoming: 'Входящие', commitDetails: 'Детали коммита',
         couldNotLoad: 'Не удалось загрузить детали.', pushPending: 'Ожидает push', pullPending: 'Ожидает pull',

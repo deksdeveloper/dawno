@@ -75,7 +75,7 @@ const zh: Locale = {
         refresh: '刷新', unstageAll: '取消全部暂存', stageAllChanges: '暂存所有更改',
         stageAllUntracked: '暂存未跟踪文件', openChanges: '打开更改', openFile: '打开文件',
         openFileHead: '打开文件 (HEAD)', discardChanges: '放弃更改', stageChanges: '暂存更改',
-        unstageChanges: '取消暂存', addToGitignore: '添加到 .gitignore',
+        unstageChanges: '取消暂存', addToGitignore: '添加到 .gitignore', removeFromGitignore: '从 .gitignore 中移除',
         revealInFileExplorer: '在资源管理器中显示', revealInExplorerView: '在浏览器视图中显示',
         pulling: '拉取中...', pushing: '推送中...',
         outgoing: '传出', incoming: '传入', commitDetails: '提交详情',
