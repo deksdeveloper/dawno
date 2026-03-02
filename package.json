@@ -1,6 +1,6 @@
 {
   "name": "dawno",
-  "version": "1.0.0",
+  "version": "0.0.2",
   "description": "SA-MP PAWN Editor - A modern Pawno alternative",
   "main": "main.js",
   "scripts": {

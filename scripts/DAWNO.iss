@@ -1,6 +1,6 @@
 ; -- DAWNO.iss --
 #define MyAppName "DAWNO"
-#define MyAppVersion "0.0.1"
+#define MyAppVersion "0.0.2"
 #define MyAppPublisher "deksdeveloper"
 #define MyAppURL "https://github.com/deksdeveloper/dawno"
 #define MyAppExeName "DAWNO.exe"
@@ -19,9 +19,9 @@ AppUpdatesURL={#MyAppURL}
 DefaultDirName={autopf}\{#MyAppName}
 ChangesAssociations=yes
 DisableProgramGroupPage=yes
-OutputBaseFilename=dawno_setup_0.0.1_win64
-VersionInfoVersion=0.0.1.0
-VersionInfoProductVersion=0.0.1
+OutputBaseFilename=dawno_setup_0.0.2_win64
+VersionInfoVersion=0.0.2.0
+VersionInfoProductVersion=0.0.2
 ; Customize the look
 SetupIconFile=..\assets\icon.ico
 UninstallDisplayIcon={app}\{#MyAppExeName}
