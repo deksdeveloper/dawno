@@ -11,7 +11,7 @@ interface TabContextMenuProps {
 }
 
 export default function TabContextMenu({ x, y, tabId, onClose }: TabContextMenuProps) {
-    const { tabs, closeTab, currentFolderPath, appendOutput } = useEditorContext();
+    const { tabs, closeTab, closeTabs, closeAllTabs, currentFolderPath, appendOutput } = useEditorContext();
     const { t } = useLanguage();
 
     const handleAction = (action: string) => {
@@ -21,17 +21,17 @@ export default function TabContextMenu({ x, y, tabId, onClose }: TabContextMenuP
                 closeTab(tabId);
                 break;
             case 'close-saved':
-                tabs.filter(t => !t.dirty).forEach(t => closeTab(t.id));
+                closeTabs(tabs.filter(t => !t.dirty).map(t => t.id));
                 break;
             case 'close-others':
-                tabs.filter(t => t.id !== tabId).forEach(t => closeTab(t.id));
+                closeTabs(tabs.filter(t => t.id !== tabId).map(t => t.id));
                 break;
             case 'close-to-right':
                 const idx = tabs.findIndex(t => t.id === tabId);
-                if (idx !== -1) tabs.slice(idx + 1).forEach(t => closeTab(t.id));
+                if (idx !== -1) closeTabs(tabs.slice(idx + 1).map(t => t.id));
                 break;
             case 'close-all':
-                [...tabs].forEach(t => closeTab(t.id));
+                closeAllTabs();
                 break;
             case 'copy-path':
                 const tab = tabs.find(t => t.id === tabId);

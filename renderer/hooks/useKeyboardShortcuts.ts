@@ -23,8 +23,19 @@ export function useKeyboardShortcuts({ setSettingsOpen }: { setSettingsOpen: (v:
                         if (activeTabId) closeTab(activeTabId);
                         break;
                     case 'f':
-                        
                         editorRef.current?.trigger('keyboard', 'actions.find', {});
+                        break;
+                    case 'h':
+                        e.preventDefault();
+                        editorRef.current?.trigger('keyboard', 'editor.action.startFindReplaceAction', {});
+                        break;
+                    case 'g':
+                        e.preventDefault();
+                        editorRef.current?.trigger('keyboard', 'editor.action.gotoLine', {});
+                        break;
+                    case ',':
+                        e.preventDefault();
+                        setSettingsOpen(true);
                         break;
                 }
             }
@@ -35,7 +46,7 @@ export function useKeyboardShortcuts({ setSettingsOpen }: { setSettingsOpen: (v:
             }
 
             if (e.key === 'F2') {
-                
+                // reserved
             }
         };
 

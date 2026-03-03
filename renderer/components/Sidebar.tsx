@@ -4,6 +4,7 @@ import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useEditorContext } from '../context/EditorContext';
 import { useFileOperations } from '../hooks/useFileOperations';
 import InlineInput from './InlineInput';
+import SourceControlPanel from './SourceControlPanel';
 
 interface FileTreeItem {
     name: string;
@@ -15,11 +16,12 @@ interface FileTreeItem {
 interface SidebarProps {
     width: number;
     onExplorerContextMenu: (x: number, y: number, path: string, isDirectory: boolean) => void;
+    activePanel: 'explorer' | 'sourceControl';
 }
 
 type InlineInputState = { mode: 'new-file' | 'new-folder'; parentPath: string } | null;
 
-export default function Sidebar({ width, onExplorerContextMenu }: SidebarProps) {
+export default function Sidebar({ width, onExplorerContextMenu, activePanel }: SidebarProps) {
     const { currentFolderPath, setCurrentFolderPath, appendOutput, shouldPreventFocus } = useEditorContext();
     const { openFolder, openFileByPath } = useFileOperations();
     const [tree, setTree] = useState<FileTreeItem[]>([]);
@@ -54,35 +56,42 @@ export default function Sidebar({ width, onExplorerContextMenu }: SidebarProps) 
 
     useEffect(() => {
         if (!window.api) return;
-        window.api.onFolderChange(() => {
+        const cleanup = window.api.onFolderChange(() => {
             setRefreshKey(prev => prev + 1);
         });
+        return () => {
+            if (typeof cleanup === 'function') cleanup();
+        };
     }, []);
 
     const handleNewFile = async () => {
-        if (!currentFolderPath) return;
+        if (!currentFolderPath || !window.api) return;
         let parent = currentFolderPath;
         if (selectedPath) {
-            const stats = await window.api.getStats(selectedPath);
-            if (stats.isDirectory) {
-                parent = selectedPath;
-            } else {
-                parent = selectedPath.split(/[\\/]/).slice(0, -1).join('\\');
-            }
+            try {
+                const stats = await window.api.getStats(selectedPath);
+                if (stats.isDirectory) {
+                    parent = selectedPath;
+                } else {
+                    parent = selectedPath.split(/[\\/]/).slice(0, -1).join('\\');
+                }
+            } catch (e) { }
         }
         setInlineInput({ mode: 'new-file', parentPath: parent });
     };
 
     const handleNewFolder = async () => {
-        if (!currentFolderPath) return;
+        if (!currentFolderPath || !window.api) return;
         let parent = currentFolderPath;
         if (selectedPath) {
-            const stats = await window.api.getStats(selectedPath);
-            if (stats.isDirectory) {
-                parent = selectedPath;
-            } else {
-                parent = selectedPath.split(/[\\/]/).slice(0, -1).join('\\');
-            }
+            try {
+                const stats = await window.api.getStats(selectedPath);
+                if (stats.isDirectory) {
+                    parent = selectedPath;
+                } else {
+                    parent = selectedPath.split(/[\\/]/).slice(0, -1).join('\\');
+                }
+            } catch (e) { }
         }
         setInlineInput({ mode: 'new-folder', parentPath: parent });
     };
@@ -280,59 +289,68 @@ export default function Sidebar({ width, onExplorerContextMenu }: SidebarProps) 
 
     return (
         <>
-            {inlineInput && (
-                <InlineInput
-                    defaultValue=""
-                    placeholder={inlineInput.mode === 'new-file' ? 'File name (e.g. script.pwn)' : 'Folder name...'}
-                    onConfirm={handleInlineConfirm}
-                    onCancel={() => setInlineInput(null)}
-                />
-            )}
-            <div className="sidebar" style={{ width: `${width}px` }}>
-                <div className="sidebar-header">
-                    <span>EXPLORER</span>
-                    <div className="sidebar-actions">
-                        {currentFolderPath && (
-                            <>
-                                <button className="sidebar-action-btn" title="New File" onClick={handleNewFile}>
-                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                                        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" /><polyline points="14 2 14 8 20 8" />
-                                        <line x1="12" y1="11" x2="12" y2="17" /><line x1="9" y1="14" x2="15" y2="14" />
-                                    </svg>
-                                </button>
-                                <button className="sidebar-action-btn" title="New Folder" onClick={handleNewFolder}>
-                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                                        <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z" />
-                                        <line x1="12" y1="11" x2="12" y2="17" /><line x1="9" y1="14" x2="15" y2="14" />
-                                    </svg>
-                                </button>
-                                <button className="sidebar-action-btn" title="Refresh" onClick={() => setRefreshKey(k => k + 1)}>
-                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                                        <path d="M23 4v6h-6M1 20v-6h6M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15" />
-                                    </svg>
-                                </button>
-                            </>
-                        )}
-                        <button className="sidebar-action-btn" title="Close Folder" onClick={() => setCurrentFolderPath(null)}>
-                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                                <line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" />
-                            </svg>
-                        </button>
-                    </div>
+            {activePanel === 'sourceControl' ? (
+                <div className="sidebar" style={{ width: `${width}px` }}>
+                    <SourceControlPanel />
                 </div>
-                <div className="sidebar-content">
-                    {currentFolderPath ? (
-                        renderTree(tree)
-                    ) : (
-                        <div className="sidebar-placeholder">
-                            <p>No folder open</p>
-                            <button className="welcome-btn mini primary" onClick={openFolder}>Open Folder</button>
-                        </div>
+            ) : (
+                <>
+                    {inlineInput && (
+                        <InlineInput
+                            defaultValue=""
+                            placeholder={inlineInput.mode === 'new-file' ? 'File name (e.g. script.pwn)' : 'Folder name...'}
+                            onConfirm={handleInlineConfirm}
+                            onCancel={() => setInlineInput(null)}
+                        />
                     )}
-                </div>
-            </div>
+                    <div className="sidebar" style={{ width: `${width}px` }}>
+                        <div className="sidebar-header">
+                            <span>EXPLORER</span>
+                            <div className="sidebar-actions">
+                                {currentFolderPath && (
+                                    <>
+                                        <button className="sidebar-action-btn" title="New File" onClick={handleNewFile}>
+                                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" /><polyline points="14 2 14 8 20 8" />
+                                                <line x1="12" y1="11" x2="12" y2="17" /><line x1="9" y1="14" x2="15" y2="14" />
+                                            </svg>
+                                        </button>
+                                        <button className="sidebar-action-btn" title="New Folder" onClick={handleNewFolder}>
+                                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                                <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z" />
+                                                <line x1="12" y1="11" x2="12" y2="17" /><line x1="9" y1="14" x2="15" y2="14" />
+                                            </svg>
+                                        </button>
+                                        <button className="sidebar-action-btn" title="Refresh" onClick={() => setRefreshKey(k => k + 1)}>
+                                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                                <path d="M23 4v6h-6M1 20v-6h6M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15" />
+                                            </svg>
+                                        </button>
+                                    </>
+                                )}
+                                <button className="sidebar-action-btn" title="Close Folder" onClick={() => setCurrentFolderPath(null)}>
+                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                        <line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" />
+                                    </svg>
+                                </button>
+                            </div>
+                        </div>
+                        <div className="sidebar-content">
+                            {currentFolderPath ? (
+                                renderTree(tree)
+                            ) : (
+                                <div className="sidebar-placeholder">
+                                    <p>No folder open</p>
+                                    <button className="welcome-btn mini primary" onClick={openFolder}>Open Folder</button>
+                                </div>
+                            )}
+                        </div>
+                    </div>
+                </>
+            )}
         </>
     );
+
 }
 
 function SubTree({ path, level, toggleFolder, expandedFolders, selectedPath, setSelectedPath, openFileByPath, onContextMenu, refreshKey, dragOverPath, onDragStart, onDragOver, onDragLeave, onDrop, onDragEnd, shouldPreventFocus }: any) {

@@ -1,6 +1,6 @@
 {
   "name": "dawno",
-  "version": "1.0.0",
+  "version": "0.0.2",
   "description": "SA-MP PAWN Editor - A modern Pawno alternative",
   "main": "main.js",
   "scripts": {
@@ -20,6 +20,7 @@
   "author": "Deks",
   "license": "MIT",
   "dependencies": {
+    "adm-zip": "^0.5.16",
     "discord-rpc": "^4.0.1",
     "electron-updater": "^6.8.3",
     "iconv-lite": "^0.7.2"

@@ -13,7 +13,7 @@ declare global {
             onWindowStateChange(cb: (state: 'maximized' | 'normal') => void): void;
 
 
-            openFile(encoding: string): Promise<Array<{ path: string; content: string }> | null>;
+            openFile(encoding: string): Promise<Array<{ path: string; content?: string; error?: string }> | null>;
             saveFile(data: { filePath: string | null; content: string; encoding: string }): Promise<string | null>;
             readFile(filePath: string, encoding: string): Promise<{ content: string | null; error: string | null }>;
 
@@ -66,6 +66,28 @@ declare global {
             onNavBack(cb: () => void): () => void;
             onNavForward(cb: () => void): () => void;
             onOpenFile(cb: (filePath: string) => void): () => void;
+
+            // Git
+            gitStatus(cwd: string): Promise<{ success: boolean; notGitRepo?: boolean; staged?: Array<{ file: string; status: string }>; unstaged?: Array<{ file: string; status: string }>; untracked?: Array<{ file: string; status: string }>; ignoredFiles?: string[]; error?: string }>;
+            gitInit(cwd: string): Promise<{ success: boolean; output?: string; error?: string }>;
+            gitAdd(cwd: string, file: string): Promise<{ success: boolean; error?: string }>;
+            gitUnstage(cwd: string, file: string): Promise<{ success: boolean; error?: string }>;
+            gitCommit(cwd: string, msg: string): Promise<{ success: boolean; output?: string; error?: string }>;
+            gitDiscard(cwd: string, file: string): Promise<{ success: boolean; error?: string }>;
+            gitPull(cwd: string): Promise<{ success: boolean; output?: string; error?: string }>;
+            gitPush(cwd: string): Promise<{ success: boolean; output?: string; error?: string }>;
+            gitGetBranch(cwd: string): Promise<{ branch: string | null }>;
+            gitGetDiff(cwd: string, file: string, staged: boolean, commitHash?: string): Promise<{ success: boolean; diff?: string; error?: string }>;
+            gitGetLog(cwd: string): Promise<{ success: boolean; commits: Array<{ hash: string; message: string }> }>;
+            gitShowCommit(cwd: string, hash: string): Promise<{ success: boolean; error?: string; commitLine?: string; files?: Array<{ status: string; path: string }> }>;
+            gitGetSyncStatus(cwd: string): Promise<{ success: boolean; incoming: number; outgoing: number; incomingCommits: Array<{ hash: string; message: string }>; outgoingCommits: Array<{ hash: string; message: string }> }>;
+            gitStash(cwd: string): Promise<{ success: boolean; output?: string; error?: string }>;
+            gitStashPop(cwd: string): Promise<{ success: boolean; output?: string; error?: string }>;
+            gitAddGitignore(cwd: string, file: string): Promise<{ success: boolean; error?: string }>;
+            gitRemoveGitignore(cwd: string, file: string): Promise<{ success: boolean; error?: string }>;
+            gitOpenFileHead(cwd: string, file: string): Promise<{ success: boolean; content?: string; error?: string }>;
+            revealInExplorer(filePath: string): Promise<{ success: boolean; error?: string }>;
+
         };
     }
 
@@ -77,6 +99,10 @@ declare global {
         defaultEncoding?: string;
         discordRPC?: boolean;
         language?: string;
+        minimap?: boolean;
+        wordWrap?: boolean;
+        autoSave?: boolean;
+        autoSaveDelay?: number; // milliseconds, default 1000
     }
 
     interface ProjectConfig {

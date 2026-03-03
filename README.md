@@ -8,14 +8,16 @@ Traditional PAWN editing can be cumbersome with outdated tools. DAWNO bridges th
 
 ## Key Features
 
-- Modern UI/UX: A sleek, VS Code-inspired interface with native dark mode support and a premium feel.
-- Advanced Monaco Editor: High-performance text editing with syntax highlighting, intelligent code completion, and smooth scrolling.
-- Automated Detection: Deep scanning (up to 4 levels) to automatically identify server executables (samp-server.exe, omp-server.exe) and configuration files (server.cfg, config.json).
-- Integrated Server Manager: Control your server directly from the editor with start, stop, and restart capabilities along with live console log tracking.
-- Configuration Editor: A dedicated table-based interface for managing server settings without manual text editing.
-- Encoding Support: Comprehensive list of character encodings, including full support for Turkish (Windows-1254) and others, with instant encoding switching.
-- Discord Rich Presence: Automatically updates your Discord status to show which project and file you are currently working on.
-- Multilingual Support: Built-in internationalization (i18n) supporting English, Turkish, and German out of the box.
+- **Modern UI/UX**: A sleek, VS Code-inspired interface with native dark mode support and a premium feel.
+- **Advanced Monaco Editor**: High-performance text editing with syntax highlighting, intelligent code completion, Find & Replace, Minimap, Word Wrap, Go to Line, and smooth scrolling.
+- **Git Source Control GUI**: Complete native Git integration allowing you to stage, commit, push, pull, discard changes, view visual diffs, and manage your `.gitignore` directly from the sidebar.
+- **Auto-Save functionality**: Configurable auto-save with customizable delay.
+- **Automated Detection**: Deep scanning (up to 4 levels) to automatically identify server executables (samp-server.exe, omp-server.exe) and configuration files (server.cfg, config.json).
+- **Integrated Server Manager**: Control your server directly from the editor with start, stop, and restart capabilities along with live console log tracking.
+- **Configuration Editor**: A dedicated table-based interface for managing server settings without manual text editing.
+- **Encoding Support**: Comprehensive list of character encodings, including full support for Turkish (Windows-1254) and others, with instant encoding switching.
+- **Discord Rich Presence**: Automatically updates your Discord status to show which project and file you are currently working on.
+- **Multilingual Support**: Built-in internationalization (i18n) natively supporting 13 languages out of the box.
 
 ## Technology Stack
 
@@ -68,12 +70,22 @@ The resulting installer can be found in the `scripts/Output/` directory.
 
 ## Internationalization (i18n)
 
-DAWNO supports multiple languages through a custom React Context-based i18n solution. Developers can easily extend the language support by adding new locale files in `renderer/i18n/locales/`.
+DAWNO natively supports 13 languages through a custom React Context-based i18n solution. Developers can easily extend the language support by adding new locale files in `renderer/i18n/locales/`.
 
 Current Supported Languages:
 - English
 - Turkish
 - German
+- Arabic
+- Spanish
+- French
+- Italian
+- Japanese
+- Korean
+- Portuguese
+- Russian
+- Vietnamese
+- Chinese
 
 ## License
 

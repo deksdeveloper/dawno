@@ -194,8 +194,8 @@ body {
 .main-layout {
   display: flex;
   flex: 1;
+  min-height: 0;
   overflow: hidden;
-  height: calc(100vh - var(--titlebar-h) - var(--output-h) - var(--statusbar-h));
   position: relative;
 }
 
@@ -650,18 +650,34 @@ body {
 
 /* ─── Output Panel ──────────────────────────────────────────────────────── */
 .output-panel {
-  height: var(--output-h);
+  height: 180px;
   background: var(--bg-1);
   border-top: 1px solid var(--border);
   display: flex;
   flex-direction: column;
   flex-shrink: 0;
-  transition: height 0.2s ease;
+  overflow: hidden;
 }
 
 .output-panel.collapsed {
   height: 32px;
 }
+
+/* Drag-to-resize handle at the top of the output panel */
+.output-resizer {
+  height: 5px;
+  background: transparent;
+  cursor: ns-resize;
+  flex-shrink: 0;
+  position: relative;
+}
+
+.output-resizer:hover,
+.output-resizer:active {
+  background: var(--accent);
+  opacity: 0.5;
+}
+
 
 .output-header {
   height: 32px;
@@ -816,6 +832,99 @@ body {
 
 #status-compile-result.err {
   color: var(--red);
+}
+
+/* Status bar interactive buttons */
+.status-item-btn {
+  cursor: pointer;
+}
+
+.status-item-btn.active {
+  color: var(--accent);
+}
+
+/* Settings modal - include path list */
+.settings-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.settings-list-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: var(--bg-2);
+  border: 1px solid var(--border);
+  border-radius: 5px;
+  padding: 5px 10px;
+  font-size: 12px;
+  font-family: var(--font-mono);
+  color: var(--text-1);
+  gap: 8px;
+}
+
+.settings-list-item span {
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.btn-list-remove {
+  background: none;
+  border: none;
+  color: var(--text-2);
+  cursor: pointer;
+  font-size: 16px;
+  line-height: 1;
+  padding: 0 2px;
+  border-radius: 3px;
+  transition: color 0.1s, background 0.1s;
+  flex-shrink: 0;
+}
+
+.btn-list-remove:hover {
+  color: var(--red);
+  background: rgba(248, 81, 73, 0.1);
+}
+
+.btn-add-path {
+  align-self: flex-start;
+  background: none;
+  border: 1px dashed var(--border);
+  border-radius: 6px;
+  color: var(--text-1);
+  cursor: pointer;
+  padding: 5px 12px;
+  font-size: 12px;
+  font-family: var(--font-ui);
+  margin-top: 4px;
+  transition: border-color 0.15s, color 0.15s;
+}
+
+.btn-add-path:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+/* Settings checkbox row */
+.checkbox-row {
+  flex-direction: row !important;
+  align-items: center;
+  gap: 10px !important;
+}
+
+.checkbox-row input[type="checkbox"] {
+  width: 15px;
+  height: 15px;
+  accent-color: var(--accent);
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+.checkbox-row label {
+  cursor: pointer;
 }
 
 /* ─── Modal / Settings ──────────────────────────────────────────────────── */
@@ -1376,6 +1485,162 @@ input[type="range"] {
   animation: pulse-green 2s infinite;
 }
 
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.spin {
+  animation: spin 1s linear infinite;
+}
+
+/* ─── Secondary Git Styles (Missing Items) ────────────────────────────────── */
+.git-small-btn {
+  padding: 4px 10px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 6px;
+  color: var(--text-1);
+  font-size: 11px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.git-small-btn:hover:not(:disabled) {
+  background: rgba(255, 255, 255, 0.1);
+  color: var(--text-0);
+  border-color: rgba(255, 255, 255, 0.2);
+}
+
+.git-small-btn.accent {
+  background: rgba(56, 139, 253, 0.15);
+  color: var(--accent);
+  border-color: rgba(56, 139, 253, 0.3);
+}
+
+.git-no-changes {
+  padding: 20px;
+  text-align: center;
+  color: var(--text-2);
+  font-style: italic;
+  font-size: 11px;
+}
+
+.git-op-msg {
+  padding: 8px 14px;
+  background: rgba(56, 139, 253, 0.1);
+  border-bottom: 1px solid rgba(56, 139, 253, 0.2);
+  color: var(--accent);
+  font-size: 11px;
+  font-weight: 100;
+  animation: fadeInSlide 0.3s ease;
+}
+
+.git-panel-empty {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  padding: 40px 20px;
+  color: var(--text-2);
+  text-align: center;
+}
+
+.git-panel-empty p {
+  font-size: 13px;
+}
+
+.git-init-btn {
+  margin-top: 10px;
+  padding: 8px 16px;
+  background: var(--accent2);
+  color: #fff;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  font-weight: 600;
+}
+
+.git-inline-input {
+  flex: 1;
+  background: var(--bg-0);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  color: var(--text-0);
+  padding: 4px 8px;
+  font-size: 11px;
+  outline: none;
+}
+
+.git-stash-input-row {
+  display: flex;
+  gap: 6px;
+  padding: 8px;
+  background: rgba(0, 0, 0, 0.2);
+}
+
+.git-stash-bar {
+  padding: 8px;
+  border-top: 1px solid var(--border);
+}
+
+.git-file-actions {
+  display: flex;
+  gap: 4px;
+  margin-left: auto;
+  opacity: 0;
+  transition: opacity 0.2s;
+}
+
+.git-file-item:hover .git-file-actions {
+  opacity: 1;
+}
+
+.git-file-btn {
+  width: 20px;
+  height: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  border: none;
+  border-radius: 4px;
+  color: var(--text-2);
+  cursor: pointer;
+}
+
+.git-file-btn:hover {
+  background: rgba(255, 255, 255, 0.1);
+  color: var(--text-0);
+}
+
+.git-file-btn.accent {
+  color: var(--accent);
+}
+
+.git-file-btn.danger {
+  color: var(--red);
+}
+
+.git-section-count {
+  background: rgba(255, 255, 255, 0.1);
+  color: var(--text-2);
+  padding: 0 6px;
+  border-radius: 10px;
+  font-size: 10px;
+  font-weight: 800;
+  margin-left: 4px;
+}
+
+
 @keyframes pulse-green {
   0% {
     box-shadow: 0 0 0 0 rgba(63, 185, 80, 0.7);
@@ -1643,4 +1908,862 @@ input[type="range"] {
 .config-table .btn-row-delete:hover {
   background: rgba(248, 81, 73, 0.15);
   color: var(--red);
+}
+
+
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.spin {
+  animation: spin 1s linear infinite;
+}
+
+/* ─── Animations ───────────────────────────────────────────────────────────── */
+@keyframes fadeInSlide {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.git-tab-content>* {
+  animation: fadeInSlide 0.4s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+/* ─── Git CSS Variables ─────────────────────────────────────────────────── */
+:root {
+  --git-modified: #d29922;
+  --git-added: #3fb950;
+  --git-deleted: #f85149;
+  --git-conflict: #f0883e;
+}
+
+/* ─── Activity Bar ──────────────────────────────────────────────────────── */
+.activity-bar {
+  width: 40px;
+  background: var(--bg-1);
+  border-right: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 4px 0;
+  gap: 2px;
+  flex-shrink: 0;
+  z-index: 60;
+}
+
+.activity-bar-item {
+  width: 36px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: none;
+  border: none;
+  border-radius: 6px;
+  color: var(--text-2);
+  cursor: pointer;
+  transition: color 0.15s, background 0.15s;
+  position: relative;
+}
+
+.activity-bar-item:hover {
+  color: var(--text-0);
+  background: var(--bg-2);
+}
+
+.activity-bar-item.active {
+  color: var(--text-0);
+  background: var(--bg-2);
+}
+
+.activity-bar-item.active::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 6px;
+  bottom: 6px;
+  width: 2px;
+  background: var(--accent);
+  border-radius: 0 2px 2px 0;
+}
+
+.activity-bar-badge {
+  position: absolute;
+  top: 4px;
+  right: 2px;
+  background: var(--accent);
+  color: #fff;
+  font-size: 9px;
+  font-weight: 700;
+  min-width: 14px;
+  height: 14px;
+  border-radius: 7px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 3px;
+  line-height: 1;
+  font-family: var(--font-ui);
+  pointer-events: none;
+}
+
+/* ─── Source Control Panel ──────────────────────────────────────────────── */
+.sc-panel {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  overflow: hidden;
+}
+
+/* The history pane (Outgoing/Incoming/Log) sits at the bottom with its own scroll  */
+.sc-history-pane {
+  overflow-y: auto;
+  border-top: 2px solid var(--border);
+  flex-shrink: 0;
+}
+
+.sc-panel-header {
+  height: 35px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 12px;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  color: var(--text-2);
+  border-bottom: 1px solid var(--border);
+  background: var(--bg-2);
+  flex-shrink: 0;
+}
+
+.sc-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+}
+
+.sc-action-btn {
+  width: 22px;
+  height: 22px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: none;
+  border: none;
+  border-radius: 4px;
+  color: var(--text-1);
+  cursor: pointer;
+  transition: background 0.1s, color 0.1s;
+  flex-shrink: 0;
+}
+
+.sc-action-btn:hover {
+  background: var(--bg-3);
+  color: var(--text-0);
+}
+
+.sc-action-btn:disabled {
+  opacity: 0.4;
+  pointer-events: none;
+}
+
+.sc-action-btn.sc-action-danger:hover {
+  background: rgba(248, 81, 73, 0.15);
+  color: var(--red);
+}
+
+.sc-sync-large-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  padding: 6px 12px;
+  margin-top: 8px;
+  background: var(--blue);
+  color: #fff;
+  border: none;
+  border-radius: 4px;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.1s;
+}
+
+.sc-sync-large-btn:hover {
+  background: var(--blue-hover, #1d4ed8);
+}
+
+.sc-sync-large-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.sc-sync-info {
+  display: flex;
+  gap: 12px;
+  font-size: 13px;
+  color: var(--text-2);
+  margin-top: 4px;
+}
+
+/* Commit area */
+.sc-commit-area {
+  padding: 8px;
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  flex-shrink: 0;
+}
+
+.sc-commit-input {
+  width: 100%;
+  background: var(--bg-0);
+  border: 1px solid var(--border);
+  border-radius: 5px;
+  color: var(--text-0);
+  font-family: var(--font-ui);
+  font-size: 11px;
+  padding: 6px 8px;
+  outline: none;
+  resize: vertical;
+  min-height: 52px;
+  transition: border-color 0.15s;
+  user-select: text;
+  cursor: text;
+}
+
+.sc-commit-input:focus {
+  border-color: var(--accent);
+}
+
+.sc-commit-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  height: 28px;
+  background: var(--accent2);
+  border: none;
+  border-radius: 5px;
+  color: #fff;
+  font-size: 11px;
+  font-weight: 600;
+  font-family: var(--font-ui);
+  cursor: pointer;
+  transition: background 0.15s, opacity 0.15s;
+}
+
+.sc-commit-btn:hover:not(:disabled) {
+  background: var(--accent);
+}
+
+.sc-commit-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.sc-commit-btn.loading {
+  background: var(--bg-3);
+  cursor: default;
+}
+
+/* Sync message */
+.sc-sync-msg {
+  padding: 5px 12px;
+  font-size: 11px;
+  color: var(--accent);
+  background: rgba(88, 166, 255, 0.06);
+  border-bottom: 1px solid var(--border);
+  flex-shrink: 0;
+}
+
+/* Sections */
+.sc-sections {
+  flex: 1;
+  overflow-y: auto;
+  overflow-x: hidden;
+}
+
+.sc-sections::-webkit-scrollbar {
+  width: 5px;
+}
+
+.sc-sections::-webkit-scrollbar-thumb {
+  background: var(--bg-3);
+  border-radius: 3px;
+}
+
+.sc-section {
+  border-bottom: 1px solid var(--border);
+}
+
+.sc-section-header {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 10px;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text-1);
+  cursor: pointer;
+  background: var(--bg-1);
+  user-select: none;
+  letter-spacing: 0.04em;
+}
+
+.sc-section-header:hover {
+  background: var(--bg-2);
+  color: var(--text-0);
+}
+
+.sc-chevron {
+  transition: transform 0.2s;
+  flex-shrink: 0;
+  color: var(--text-2);
+}
+
+.sc-chevron.expanded {
+  transform: rotate(90deg);
+}
+
+.sc-section-title {
+  flex: 1;
+}
+
+.sc-section-count {
+  font-size: 10px;
+  color: var(--text-2);
+  background: var(--bg-3);
+  border-radius: 10px;
+  padding: 1px 6px;
+  min-width: 18px;
+  text-align: center;
+}
+
+.sc-section-actions {
+  display: flex;
+  gap: 2px;
+  margin-left: 4px;
+}
+
+/* File rows */
+.sc-section-body {
+  background: var(--bg-0);
+}
+
+.sc-file-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px 4px 16px;
+  cursor: pointer;
+  font-size: 11px;
+  color: var(--text-1);
+  transition: background 0.1s, color 0.1s;
+  min-height: 24px;
+  position: relative;
+}
+
+.sc-file-row:hover {
+  background: var(--bg-2);
+  color: var(--text-0);
+}
+
+.sc-badge {
+  font-size: 10px;
+  font-weight: 700;
+  font-family: var(--font-mono);
+  width: 14px;
+  text-align: center;
+  flex-shrink: 0;
+}
+
+.sc-file-info {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+  overflow: hidden;
+}
+
+.sc-file-name {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  color: var(--text-0);
+  font-size: 11px;
+}
+
+.sc-file-parent {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  color: var(--text-2);
+  font-size: 10px;
+  flex-shrink: 1;
+  min-width: 0;
+}
+
+.sc-row-actions {
+  display: flex;
+  gap: 2px;
+  flex-shrink: 0;
+}
+
+/* Loading state */
+.sc-loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+}
+
+/* Clean state / placeholder */
+.sc-clean-state,
+.sc-placeholder {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 32px 20px;
+  gap: 12px;
+  color: var(--text-2);
+  text-align: center;
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+.sc-init-btn {
+  margin-top: 4px;
+  padding: 7px 18px;
+  background: var(--accent2);
+  border: none;
+  border-radius: 6px;
+  color: #fff;
+  font-size: 12px;
+  font-weight: 600;
+  font-family: var(--font-ui);
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.sc-init-btn:hover {
+  background: var(--accent);
+}
+
+/* Commit Log */
+.sc-commit-row {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  padding: 4px 12px;
+  font-size: 11px;
+  color: var(--text-1);
+  cursor: default;
+}
+
+.sc-commit-row:hover {
+  background: var(--bg-2);
+}
+
+.sc-commit-hash {
+  font-family: var(--font-mono);
+  color: var(--accent);
+  font-size: 10px;
+  flex-shrink: 0;
+}
+
+.sc-commit-msg {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--text-1);
+}
+
+.sc-no-commits {
+  padding: 10px 14px;
+  color: var(--text-2);
+  font-size: 11px;
+  font-style: italic;
+}
+
+.sc-commit-badge {
+  font-size: 10px;
+  font-weight: 700;
+  width: 14px;
+  text-align: center;
+  flex-shrink: 0;
+  font-family: var(--font-mono);
+}
+
+.sc-commit-badge-out {
+  color: var(--git-modified, #e3b341);
+}
+
+.sc-commit-badge-in {
+  color: var(--git-added, #56d364);
+}
+
+.sc-commit-outgoing {
+  opacity: 0.9;
+}
+
+.sc-commit-incoming {
+  opacity: 0.9;
+}
+
+
+/* Spinner */
+@keyframes sc-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.sc-spinner {
+  display: inline-block;
+  width: 12px;
+  height: 12px;
+  border: 2px solid rgba(255, 255, 255, 0.25);
+  border-top-color: var(--accent);
+  border-radius: 50%;
+  animation: sc-spin 0.6s linear infinite;
+}
+
+/* ─── Git Diff Modal ────────────────────────────────────────────────────── */
+.git-diff-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(2px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 2000;
+  animation: sc-fade-in 0.15s ease;
+}
+
+@keyframes sc-fade-in {
+  from {
+    opacity: 0;
+  }
+
+  to {
+    opacity: 1;
+  }
+}
+
+.git-diff-modal {
+  background: var(--bg-1);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  width: min(900px, 90vw);
+  height: min(600px, 85vh);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  box-shadow: 0 24px 64px rgba(0, 0, 0, 0.7);
+  animation: sc-slide-up 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes sc-slide-up {
+  from {
+    transform: translateY(16px);
+    opacity: 0;
+  }
+
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+.git-diff-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 14px;
+  border-bottom: 1px solid var(--border);
+  background: var(--bg-2);
+  flex-shrink: 0;
+}
+
+.git-diff-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+  color: var(--text-0);
+  font-weight: 600;
+  overflow: hidden;
+}
+
+.git-diff-staged-badge {
+  font-size: 10px;
+  font-weight: 600;
+  padding: 2px 6px;
+  background: rgba(88, 166, 255, 0.12);
+  color: var(--accent);
+  border-radius: 4px;
+  flex-shrink: 0;
+}
+
+.git-diff-close-btn {
+  background: none;
+  border: none;
+  color: var(--text-2);
+  cursor: pointer;
+  padding: 4px;
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  transition: background 0.1s, color 0.1s;
+}
+
+.git-diff-close-btn:hover {
+  background: var(--bg-3);
+  color: var(--text-0);
+}
+
+.git-diff-body {
+  flex: 1;
+  overflow: auto;
+}
+
+.git-diff-loading {
+  padding: 24px;
+  color: var(--text-2);
+  font-size: 12px;
+}
+
+.git-diff-pre {
+  background: var(--bg-0);
+  font-family: var(--font-mono);
+  font-size: 12px;
+  line-height: 1.6;
+  min-height: 100%;
+}
+
+.diff-line {
+  display: flex;
+  gap: 0;
+  white-space: pre;
+}
+
+.diff-line:hover {
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.diff-line-num {
+  min-width: 40px;
+  padding: 0 8px;
+  text-align: right;
+  color: var(--text-2);
+  font-size: 11px;
+  border-right: 1px solid var(--border);
+  user-select: none;
+  background: var(--bg-1);
+  flex-shrink: 0;
+}
+
+.diff-line-content {
+  padding: 0 12px;
+  flex: 1;
+  overflow: hidden;
+}
+
+.diff-line-add {
+  background: rgba(63, 185, 80, 0.1);
+}
+
+.diff-line-add .diff-line-num {
+  background: rgba(63, 185, 80, 0.08);
+  color: var(--green);
+}
+
+.diff-line-add .diff-line-content {
+  color: #b5f5c4;
+}
+
+.diff-line-del {
+  background: rgba(248, 81, 73, 0.1);
+}
+
+.diff-line-del .diff-line-num {
+  background: rgba(248, 81, 73, 0.08);
+  color: var(--red);
+}
+
+.diff-line-del .diff-line-content {
+  color: #ffc1bf;
+}
+
+.diff-line-hunk {
+  background: rgba(88, 166, 255, 0.06);
+}
+
+.diff-line-hunk .diff-line-content {
+  color: var(--accent);
+  font-style: italic;
+}
+
+.diff-line-meta .diff-line-content {
+  color: var(--text-2);
+  font-style: italic;
+}
+
+/* ─── Status Bar Branch ─────────────────────────────────────────────────── */
+.status-branch {
+  color: var(--text-0) !important;
+  gap: 5px !important;
+}
+
+.status-branch svg {
+  color: var(--accent);
+}
+
+/* ─── SC Context Menu ───────────────────────────────────────────────────── */
+.sc-ctx-menu {
+  background: var(--bg-2);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 4px 0;
+  min-width: 200px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.55);
+  animation: sc-fade-in 0.1s ease;
+  user-select: none;
+}
+
+.sc-ctx-item {
+  display: block;
+  width: 100%;
+  padding: 7px 14px;
+  text-align: left;
+  background: none;
+  border: none;
+  color: var(--text-0);
+  font-size: 12px;
+  font-family: var(--font-ui);
+  cursor: pointer;
+  transition: background 0.1s;
+}
+
+.sc-ctx-item:hover {
+  background: var(--bg-3);
+}
+
+.sc-ctx-item.sc-ctx-danger {
+  color: var(--red);
+}
+
+.sc-ctx-item.sc-ctx-danger:hover {
+  background: rgba(248, 81, 73, 0.12);
+}
+
+.sc-ctx-sep {
+  height: 1px;
+  background: var(--border);
+  margin: 3px 0;
+}
+
+/* ─── SC Commit Detail Modal ────────────────────────────────────────────── */
+.sc-commit-detail-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.4);
+  backdrop-filter: blur(2px);
+  z-index: 50;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.sc-commit-detail-modal {
+  width: 90%;
+  max-width: 400px;
+  background: var(--bg-1);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.sc-cd-header {
+  padding: 10px 14px;
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: var(--bg-2);
+}
+
+.sc-cd-header h3 {
+  margin: 0;
+  font-size: 13px;
+  color: var(--text-0);
+  font-weight: 600;
+}
+
+.sc-close-btn {
+  background: none;
+  border: none;
+  color: var(--text-2);
+  cursor: pointer;
+  padding: 2px;
+  border-radius: 4px;
+}
+
+.sc-close-btn:hover {
+  background: var(--bg-3);
+  color: var(--text-0);
+}
+
+.sc-cd-body {
+  padding: 14px;
+  max-height: 400px;
+  overflow-y: auto;
+  font-size: 13px;
+}
+
+.sc-cd-info {
+  margin-bottom: 14px;
+}
+
+.sc-cd-info strong {
+  color: var(--accent);
+  font-family: var(--font-mono);
+}
+
+.sc-cd-info p {
+  margin: 6px 0 0 0;
+  color: var(--text-0);
+}
+
+.sc-cd-files {
+  border-top: 1px solid var(--border);
+  padding-top: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
 }
