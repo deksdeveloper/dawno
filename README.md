@@ -1,97 +1,169 @@
-# DAWNO - PAWN Editor
+# DAWNO - Professional PAWN IDE
 
-DAWNO is a modern, performance-oriented PAWN code editor designed specifically for SA-MP (San Andreas Multiplayer) and open.mp developers. It serves as a modern alternative to the classic Pawno editor, built using Next.js, Electron, and Monaco Editor technologies.
+<div align="center">
+
+![Version](https://img.shields.io/badge/version-0.0.2-blue)
+![License](https://img.shields.io/badge/license-MIT-green)
+![TypeScript](https://img.shields.io/badge/TypeScript-007ACC?logo=typescript&logoColor=white)
+![Electron](https://img.shields.io/badge/Electron-47848F?logo=electron&logoColor=white)
+![Next.js](https://img.shields.io/badge/Next.js-000000?logo=next.js&logoColor=white)
+
+**A powerful, modern IDE for SA-MP and open.mp development**
+
+[Features](#features) • [Tech Stack](#tech-stack) • [Installation](#installation) • [Building](#building) • [Contributing](#contributing)
+
+</div>
+
+---
 
 ## Overview
 
-Traditional PAWN editing can be cumbersome with outdated tools. DAWNO bridges this gap by providing a professional environment that mirrors the functionality and aesthetics of modern code editors like Visual Studio Code, while maintaining a lightweight footprint tailored for San Andreas modding.
+DAWNO is a professional-grade PAWN code editor designed specifically for SA-MP (San Andreas Multiplayer) and open.mp developers. It serves as a modern, high-performance alternative to the classic Pawno editor, built with cutting-edge web technologies.
 
-## Key Features
+## Features
 
-- **Modern UI/UX**: A sleek, VS Code-inspired interface with native dark mode support and a premium feel.
-- **Advanced Monaco Editor**: High-performance text editing with syntax highlighting, intelligent code completion, Find & Replace, Minimap, Word Wrap, Go to Line, and smooth scrolling.
-- **Git Source Control GUI**: Complete native Git integration allowing you to stage, commit, push, pull, discard changes, view visual diffs, and manage your `.gitignore` directly from the sidebar.
-- **Auto-Save functionality**: Configurable auto-save with customizable delay.
-- **Automated Detection**: Deep scanning (up to 4 levels) to automatically identify server executables (samp-server.exe, omp-server.exe) and configuration files (server.cfg, config.json).
-- **Integrated Server Manager**: Control your server directly from the editor with start, stop, and restart capabilities along with live console log tracking.
-- **Configuration Editor**: A dedicated table-based interface for managing server settings without manual text editing.
-- **Encoding Support**: Comprehensive list of character encodings, including full support for Turkish (Windows-1254) and others, with instant encoding switching.
-- **Discord Rich Presence**: Automatically updates your Discord status to show which project and file you are currently working on.
-- **Multilingual Support**: Built-in internationalization (i18n) natively supporting 13 languages out of the box.
+### 🎨 Modern Interface
+- VS Code-inspired design with native dark mode
+- Sleek and intuitive user experience
+- Monaco Editor integration for premium text editing
 
-## Technology Stack
+### ✨ Editor Capabilities
+- Advanced syntax highlighting for PAWN language
+- Intelligent code completion
+- Find & Replace with regex support
+- Minimap navigation
+- Word wrap toggle
+- Go to Line functionality
+- Smooth scrolling experience
 
-- Core Framework: Next.js (React)
-- Shell: Electron
-- Editor Engine: Monaco Editor
-- Encoding: iconv-lite
-- Build System: Electron Packager and Inno Setup
+### 🔧 Server Management
+- Integrated server start/stop/restart controls
+- Live console log tracking
+- Automatic detection of server executables (samp-server.exe, omp-server.exe)
+- Configuration file editor (server.cfg, config.json)
 
-## Installation and Setup
+### 📦 Source Control
+- Complete Git integration from sidebar
+- Stage, commit, push, pull operations
+- Visual diff viewer
+- .gitignore management
+
+### 🌐 Internationalization
+- Built-in support for **13 languages**:
+  - Arabic, Chinese, English, French, German, Italian, Japanese, Korean, Portuguese, Russian, Spanish, Turkish, Vietnamese
+
+### 💬 Discord Integration
+- Rich Presence showing current project and file
+- Real-time status updates
+
+### 🔄 Auto-Save
+- Configurable auto-save with customizable delay
+- Never lose your work
+
+### 📝 Encoding Support
+- Multiple character encodings
+- Full Turkish (Windows-1254) support
+- Instant encoding switching
+
+## Tech Stack
+
+| Technology | Purpose |
+|------------|---------|
+| **Electron** | Desktop application shell |
+| **Next.js** | React-based UI framework |
+| **Monaco Editor** | High-performance code editor |
+| **TypeScript** | Type-safe development |
+| **iconv-lite** | Character encoding conversion |
+
+## Installation
 
 ### Prerequisites
 
-- Node.js (version 18 or higher)
-- npm (Node Package Manager)
+- Node.js v18 or higher
+- npm or yarn
 
 ### Steps
 
-1. Clone the repository:
-   ```bash
-   git clone https://github.com/deksdeveloper/dawno.git
-   cd dawno
-   ```
-
-2. Install dependencies:
-   ```bash
-   npm install
-   ```
-
-3. Start in development mode:
-   ```bash
-   npm run dev
-   ```
-
-## Building and Packaging
-
-DAWNO includes a custom build pipeline to generate standalone executables and professional installers.
-
-### Creating a Distribution
-To build the application for distribution:
 ```bash
+# Clone the repository
+git clone https://github.com/deksdeveloper/dawno.git
+
+# Navigate to project directory
+cd dawno
+
+# Install root dependencies
+npm install
+
+# Install renderer dependencies
+npm run postinstall
+
+# Start development mode
+npm run dev
+```
+
+## Building
+
+### Development Mode
+
+```bash
+# Run Next.js dev server
+npm run dev:next
+
+# Or run Electron directly with dev tools
+npm run dev
+```
+
+### Production Build
+
+```bash
+# Build and package for Windows (x64)
 npm run package
 ```
-This command runs the following sequence:
-1. Compiles the Next.js renderer.
-2. Packages the Electron application for Windows x64.
-3. Invokes the Inno Setup compiler to generate a professional setup wizard.
 
-The resulting installer can be found in the `scripts/Output/` directory.
+This command will:
+1. Compile the Next.js renderer
+2. Package the Electron application for Windows x64
+3. Generate a professional installer using Inno Setup
 
-## Internationalization (i18n)
+## Project Structure
 
-DAWNO natively supports 13 languages through a custom React Context-based i18n solution. Developers can easily extend the language support by adding new locale files in `renderer/i18n/locales/`.
+```
+dawno/
+├── main.js              # Electron main process
+├── preload.js           # Preload script for IPC
+├── package.json         # Root dependencies & scripts
+├── assets/              # Application icons
+├── renderer/            # Next.js frontend
+│   ├── app/             # Next.js App Router pages
+│   ├── components/      # React components
+│   ├── context/         # React context providers
+│   ├── hooks/           # Custom React hooks
+│   ├── i18n/            # Internationalization
+│   ├── pawn-lib/        # PAWN language definitions
+│   ├── public/          # Static assets
+│   └── styles/          # Global styles
+├── scripts/             # Build scripts
+└── LICENSE
+```
 
-Current Supported Languages:
-- English
-- Turkish
-- German
-- Arabic
-- Spanish
-- French
-- Italian
-- Japanese
-- Korean
-- Portuguese
-- Russian
-- Vietnamese
-- Chinese
+## Contributing
+
+Contributions are welcome! Please feel free to submit a Pull Request.
+
+1. Fork the repository
+2. Create your feature branch (`git checkout -b feature/amazing-feature`)
+3. Commit your changes (`git commit -m 'Add amazing feature'`)
+4. Push to the branch (`git push origin feature/amazing-feature`)
+5. Open a Pull Request
 
 ## License
 
-This project is licensed under the MIT License. See the LICENSE file for details.
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
-## Author
+---
 
-Developed by deksdeveloper.
-For more information, visit the [GitHub repository](https://github.com/deksdeveloper/dawno).
+<div align="center">
+
+Made with ❤️ for SA-MP & open.mp developers
+
+</div>
