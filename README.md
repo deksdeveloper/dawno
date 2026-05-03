@@ -1,3 +1,4 @@
+<div align="center">
 # DAWNO - Professional PAWN IDE
 
 <div align="center">
