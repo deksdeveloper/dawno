@@ -1,7 +1,6 @@
 <div align="center">
-# DAWNO - Professional PAWN IDE
+**# DAWNO - Professional PAWN IDE**
 
-<div align="center">
 
 ![Version](https://img.shields.io/badge/version-0.0.2-blue)
 ![License](https://img.shields.io/badge/license-MIT-green)
