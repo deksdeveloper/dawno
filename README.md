@@ -1,5 +1,5 @@
 <div align="center">
-**# DAWNO - Professional PAWN IDE**
+**DAWNO - Professional PAWN IDE**
 
 
 ![Version](https://img.shields.io/badge/version-0.0.2-blue)
